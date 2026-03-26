@@ -1,4 +1,81 @@
-require('ghlite.types')
+--- @alias GHLiteDiffTool 'auto'|'diffview'|'codediff'
+--- @alias GHLiteSplitCommand ''|'split'|'vsplit'|'tabnew'|string
+
+--- @class GHLiteConfigMergeOptions
+--- @field approved string
+--- @field nonapproved string
+
+--- @class GHLiteConfigDiffKeymaps
+--- @field open_file string|false
+--- @field open_file_tab string|false
+--- @field open_file_split string|false
+--- @field open_file_vsplit string|false
+--- @field approve string|false
+--- @field request_changes string|false
+
+--- @class GHLiteConfigCommentKeymaps
+--- @field send_comment string
+
+--- @class GHLiteConfigPRKeymaps
+--- @field approve string|false
+--- @field request_changes string|false
+--- @field merge string|false
+--- @field comment string|false
+--- @field diff string|false
+
+--- @class GHLiteConfigKeymaps
+--- @field diff GHLiteConfigDiffKeymaps
+--- @field comment GHLiteConfigCommentKeymaps
+--- @field pr GHLiteConfigPRKeymaps
+
+--- @class GHLiteConfig
+--- @field debug boolean
+--- @field view_split GHLiteSplitCommand|false
+--- @field diff_split GHLiteSplitCommand|false
+--- @field diff_tool GHLiteDiffTool
+--- @field comment_split GHLiteSplitCommand|false
+--- @field open_command string
+--- @field merge GHLiteConfigMergeOptions
+--- @field html_comments_command string[]|false
+--- @field keymaps GHLiteConfigKeymaps
+
+--- @class GHLiteUserConfigMergeOptions
+--- @field approved? string
+--- @field nonapproved? string
+
+--- @class GHLiteUserConfigDiffKeymaps
+--- @field open_file? string|false
+--- @field open_file_tab? string|false
+--- @field open_file_split? string|false
+--- @field open_file_vsplit? string|false
+--- @field approve? string|false
+--- @field request_changes? string|false
+
+--- @class GHLiteUserConfigCommentKeymaps
+--- @field send_comment? string
+
+--- @class GHLiteUserConfigPRKeymaps
+--- @field approve? string|false
+--- @field request_changes? string|false
+--- @field merge? string|false
+--- @field comment? string|false
+--- @field diff? string|false
+
+--- @class GHLiteUserConfigKeymaps
+--- @field diff? GHLiteUserConfigDiffKeymaps
+--- @field comment? GHLiteUserConfigCommentKeymaps
+--- @field pr? GHLiteUserConfigPRKeymaps
+
+--- @class GHLiteUserConfig
+--- @field debug? boolean
+--- @field view_split? GHLiteSplitCommand|false
+--- @field diff_split? GHLiteSplitCommand|false
+--- @field diff_tool? GHLiteDiffTool
+--- @field comment_split? GHLiteSplitCommand|false
+--- @field open_command? string
+--- @field merge? GHLiteUserConfigMergeOptions
+--- @field html_comments_command? string[]|false
+--- @field keymaps? GHLiteUserConfigKeymaps
 
 --- @class GHLiteConfigModule
 --- @field s GHLiteConfig

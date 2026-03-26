@@ -1,5 +1,23 @@
 local utils = require('ghlite.utils')
-require('ghlite.types')
+
+--- @class Comment
+--- @field id integer
+--- @field url string
+--- @field path string
+--- @field line integer
+--- @field start_line integer|userdata
+--- @field user string
+--- @field body string
+--- @field updated_at string
+--- @field diff_hunk string
+
+--- @class GroupedComment
+--- @field id integer
+--- @field line integer
+--- @field start_line integer|userdata
+--- @field url string
+--- @field content string
+--- @field comments Comment[]
 
 --- @class GHLiteCommentsUtilsModule
 local M = {}

@@ -5,7 +5,17 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
-require('ghlite.types')
+--- @class GHLiteQfEntry
+--- @field filename string
+--- @field lnum integer
+--- @field text string
+
+--- @class GHLiteDiagnostic
+--- @field lnum integer
+--- @field col integer
+--- @field message string
+--- @field severity integer
+--- @field source string
 
 --- @class GHLiteCommentsModule
 local M = {}

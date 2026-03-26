@@ -10,8 +10,6 @@ local gh = require('ghlite.gh')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
-require('ghlite.types')
-
 --- @class GHLitePrUtilsModule
 local M = {}
 

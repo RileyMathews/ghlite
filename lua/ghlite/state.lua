@@ -1,5 +1,3 @@
-require('ghlite.types')
-
 --- @class GHLiteStateModule
 local M = {}
 

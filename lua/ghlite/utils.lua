@@ -1,7 +1,5 @@
 local config = require('ghlite.config')
 
-require('ghlite.types')
-
 --- @class GHLiteUtilsModule
 local M = {}
 

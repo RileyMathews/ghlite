@@ -5,8 +5,6 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
-require('ghlite.types')
-
 --- @class GHLitePrCommandsModule
 local M = {}
 

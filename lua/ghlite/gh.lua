@@ -2,7 +2,60 @@ local comments_utils = require('ghlite.comments_utils')
 local config = require('ghlite.config')
 local utils = require('ghlite.utils')
 
-require('ghlite.types')
+--- @class GHLiteGitHubUser
+--- @field login string
+
+--- @class GHLiteLabel
+--- @field name string
+
+--- @class GHLiteReview
+--- @field author GHLiteGitHubUser
+--- @field state string
+
+--- @class GHLitePRComment
+--- @field author GHLiteGitHubUser
+--- @field body string
+--- @field createdAt string
+
+--- @class PullRequest
+--- @field number integer
+--- @field baseRefName string
+--- @field baseRefOid string|nil
+--- @field headRefName string
+--- @field headRefOid string
+--- @field reviewDecision string|nil
+
+--- @class PullRequestListItem: PullRequest
+--- @field title string
+--- @field author GHLiteGitHubUser
+--- @field createdAt string
+--- @field isDraft boolean
+--- @field labels GHLiteLabel[]
+
+--- @class PullRequestInfo: PullRequestListItem
+--- @field url string
+--- @field comments GHLitePRComment[]
+--- @field reviews GHLiteReview[]
+--- @field body string
+--- @field changedFiles integer
+
+--- @class GHLiteRawCommentUser
+--- @field login string
+
+--- @class GHLiteRawComment
+--- @field id integer
+--- @field html_url string
+--- @field path string
+--- @field line integer|userdata
+--- @field start_line integer|userdata
+--- @field user GHLiteRawCommentUser
+--- @field body string
+--- @field updated_at string
+--- @field diff_hunk string
+--- @field in_reply_to_id integer|nil
+
+--- @class GHLiteResponseWithErrors
+--- @field errors? table
 
 local f = string.format
 

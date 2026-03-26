@@ -3,8 +3,6 @@ local config = require('ghlite.config')
 local diff = require('ghlite.diff')
 local pr_commands = require('ghlite.pr_commands')
 
-require('ghlite.types')
-
 --- @class GHLiteModule
 local M = {}
 

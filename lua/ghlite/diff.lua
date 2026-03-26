@@ -6,7 +6,11 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
-require('ghlite.types')
+--- @alias GHLiteOpenCommand 'edit'|'tabedit'|'split'|'vsplit'
+
+--- @class FileNameAndLinePair
+--- @field [1] string filename
+--- @field [2] integer line
 
 --- @class GHLiteDiffModule
 local M = {}
