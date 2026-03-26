@@ -1,9 +1,11 @@
 local utils = require('ghlite.utils')
 require('ghlite.types')
 
+--- @class GHLiteCommentsUtilsModule
 local M = {}
 
---- @return Comment: extracted gh comment
+--- @param comment GHLiteRawComment
+--- @return Comment
 function M.convert_comment(comment)
   return {
     id = comment.id,
@@ -19,6 +21,7 @@ function M.convert_comment(comment)
 end
 
 --- @param comment Comment
+--- @return string
 local function format_comment(comment)
   return string.format(
     '✍️ %s at %s:\n%s\n\n',
@@ -29,6 +32,7 @@ local function format_comment(comment)
 end
 
 --- @param comments Comment[]
+--- @return string
 function M.prepare_content(comments)
   local content = ''
   if #comments > 0 and comments[1].start_line ~= vim.NIL and comments[1].start_line ~= comments[1].line then
@@ -46,10 +50,13 @@ function M.prepare_content(comments)
   return content
 end
 
+--- @param gh_comments GHLiteRawComment[]
+--- @param cb GHLiteGroupedCommentsCallback
 function M.group_comments(gh_comments, cb)
   utils.get_git_root(function(git_root)
     --- @type table<number, Comment[]>
     local comment_groups = {}
+    --- @type table<number, number>
     local base = {}
 
     for _, comment in pairs(gh_comments) do

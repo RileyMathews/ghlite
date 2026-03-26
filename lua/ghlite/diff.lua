@@ -6,6 +6,9 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
+require('ghlite.types')
+
+--- @class GHLiteDiffModule
 local M = {}
 
 --- @param cmd string
@@ -32,9 +35,13 @@ local function get_diff_tool()
   end
 end
 
+--- @param diff_content string[]
+--- @param cb GHLiteVoidCallback
 local function construct_mappings(diff_content, cb)
   utils.get_git_root(function(git_root)
+    --- @type string|nil
     local current_filename = nil
+    --- @type integer
     local current_line_in_file = 0
 
     for line_num = 1, #diff_content do
@@ -69,6 +76,8 @@ local function construct_mappings(diff_content, cb)
   end)
 end
 
+--- @param open_command GHLiteOpenCommand
+--- @return fun()
 local function open_file_from_diff(open_command)
   return function()
     pr_utils.get_checked_out_pr(function(checked_out_pr)
@@ -80,6 +89,7 @@ local function open_file_from_diff(open_command)
       vim.schedule(function()
         local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
 
+        --- @type FileNameAndLinePair
         local fnpair = state.diff_line_to_filename_line[cursor_line]
         local file_path = fnpair[1]
         local line_in_file = fnpair[2]
@@ -90,6 +100,7 @@ local function open_file_from_diff(open_command)
   end
 end
 
+--- @return nil
 function M.load_pr_diff()
   pr_utils.get_selected_pr(function(selected_pr)
     if selected_pr == nil then
@@ -99,6 +110,7 @@ function M.load_pr_diff()
 
     utils.notify('PR diff loading started...')
     gh.get_pr_diff(selected_pr.number, function(diff_content)
+      --- @type string[]
       local diff_content_lines = vim.split(diff_content, '\n')
       construct_mappings(diff_content_lines, function()
         vim.schedule(function()
@@ -195,7 +207,9 @@ function M.load_pr_diff()
   end)
 end
 
+--- @return nil
 function M.load_pr_diffview()
+  --- @type GHLiteDiffTool|nil
   local diff_tool = get_diff_tool()
 
   if diff_tool == nil then

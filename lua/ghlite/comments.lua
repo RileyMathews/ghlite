@@ -5,11 +5,17 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
+require('ghlite.types')
+
+--- @class GHLiteCommentsModule
 local M = {}
 
+--- @return nil
 local function load_comments_to_quickfix_list()
+  --- @type GHLiteQfEntry[]
   local qf_entries = {}
 
+  --- @type string[]
   local filenames = {}
   for fn in pairs(state.comments_list) do
     table.insert(filenames, fn)
@@ -42,6 +48,7 @@ local function load_comments_to_quickfix_list()
   end
 end
 
+--- @return nil
 M.load_comments = function()
   pr_utils.get_checked_out_pr(function(checked_out_pr)
     if checked_out_pr == nil then
@@ -62,6 +69,8 @@ M.load_comments = function()
   end)
 end
 
+--- @param pr_to_load integer
+--- @param cb GHLiteVoidCallback
 M.load_comments_only = function(pr_to_load, cb)
   gh.load_comments(pr_to_load, function(comments_list)
     state.comments_list = comments_list
@@ -69,6 +78,7 @@ M.load_comments_only = function(pr_to_load, cb)
   end)
 end
 
+--- @return nil
 M.load_comments_on_current_buffer = function()
   vim.schedule(function()
     local current_buffer = vim.api.nvim_get_current_buf()
@@ -76,6 +86,7 @@ M.load_comments_on_current_buffer = function()
   end)
 end
 
+--- @param bufnr integer
 M.load_comments_on_buffer = function(bufnr)
   if bufnr == state.diff_buffer_id then
     M.load_comments_on_diff_buffer(bufnr)
@@ -110,8 +121,10 @@ M.load_comments_on_buffer = function(bufnr)
   end)
 end
 
+--- @param bufnr integer
 M.load_comments_on_diff_buffer = function(bufnr)
   config.log('load_comments_on_diff_buffer')
+  --- @type GHLiteDiagnostic[]
   local diagnostics = {}
 
   for filename, comments in pairs(state.comments_list) do
@@ -140,6 +153,9 @@ M.load_comments_on_diff_buffer = function(bufnr)
   end)
 end
 
+--- @param current_filename string
+--- @param current_line integer
+--- @return GroupedComment[]
 M.get_conversations = function(current_filename, current_line)
   --- @type GroupedComment[]
   local conversations = {}
@@ -153,6 +169,7 @@ M.get_conversations = function(current_filename, current_line)
   return conversations
 end
 
+--- @param cb GHLiteFileLineCallback
 local function get_current_filename_and_line(cb)
   vim.schedule(function()
     local current_buf = vim.api.nvim_get_current_buf()
@@ -167,6 +184,7 @@ local function get_current_filename_and_line(cb)
     local current_filename = vim.api.nvim_buf_get_name(current_buf)
 
     if current_buf == state.diff_buffer_id then
+      --- @type FileNameAndLinePair
       local info = state.diff_line_to_filename_line[current_start_line]
       current_filename = info[1]
       current_start_line = info[2]
@@ -206,6 +224,7 @@ local function get_current_filename_and_line(cb)
   end)
 end
 
+--- @return nil
 M.comment_on_line = function()
   pr_utils.get_selected_pr(function(selected_pr)
     if selected_pr == nil then
@@ -226,6 +245,7 @@ M.comment_on_line = function()
         end
 
         vim.schedule(function()
+          --- @type GroupedComment[]
           local conversations = {}
           if current_start_line == current_line then
             conversations = M.get_conversations(current_filename, current_line)
@@ -247,8 +267,9 @@ M.comment_on_line = function()
               --- @param grouped_comment GroupedComment
               local function reply(grouped_comment)
                 utils.notify('Sending reply...')
-                gh.reply_to_comment(state.selected_PR.number, input, grouped_comment.id, function(resp)
+                gh.reply_to_comment(selected_pr.number, input, grouped_comment.id, function(resp)
                   if resp['errors'] == nil then
+                    --- @cast resp GHLiteRawComment
                     utils.notify('Reply sent.')
                     local new_comment = comments_utils.convert_comment(resp)
                     table.insert(grouped_comment.comments, new_comment)
@@ -277,13 +298,14 @@ M.comment_on_line = function()
                 if current_filename:sub(1, #git_root) == git_root then
                   utils.notify('Sending comment...')
                   gh.new_comment(
-                    state.selected_PR,
+                    selected_pr,
                     input,
                     current_filename:sub(#git_root + 2),
                     current_start_line,
                     current_line,
                     function(resp)
                       if resp['errors'] == nil then
+                        --- @cast resp GHLiteRawComment
                         local new_comment = comments_utils.convert_comment(resp)
                         --- @type GroupedComment
                         local new_comment_group = {
@@ -317,6 +339,7 @@ M.comment_on_line = function()
   end)
 end
 
+--- @return nil
 M.open_comment = function()
   get_current_filename_and_line(function(current_filename, _, current_line)
     if current_filename == nil then
@@ -347,6 +370,9 @@ M.open_comment = function()
   end)
 end
 
+--- @param current_filename string
+--- @param current_line integer
+--- @param cb GHLiteCommentListsCallback
 local function get_own_comments(current_filename, current_line, cb)
   local conversations = M.get_conversations(current_filename, current_line)
   gh.get_user(function(user)
@@ -370,6 +396,7 @@ end
 
 --- @param comment Comment
 --- @param conversation GroupedComment
+--- @return nil
 local function edit_comment_body(comment, conversation)
   local prompt = '<!-- Change your comment and press ' .. config.s.keymaps.comment.send_comment .. ': -->'
 
@@ -383,6 +410,7 @@ local function edit_comment_body(comment, conversation)
       utils.notify('Updating comment...')
       gh.update_comment(comment.id, input, function(resp)
         if resp['errors'] == nil then
+          --- @cast resp GHLiteRawComment
           utils.notify('Comment updated.')
           comment.body = resp.body
           conversation.content = comments_utils.prepare_content(conversation.comments)
@@ -396,6 +424,7 @@ local function edit_comment_body(comment, conversation)
   )
 end
 
+--- @return nil
 M.update_comment = function()
   get_current_filename_and_line(function(current_filename, _, current_line)
     if current_filename == nil then
@@ -425,6 +454,7 @@ M.update_comment = function()
   end)
 end
 
+--- @return nil
 M.delete_comment = function()
   get_current_filename_and_line(function(current_filename, _, current_line)
     if current_filename == nil then
@@ -466,14 +496,20 @@ M.delete_comment = function()
   end)
 end
 
+--- @param buf_name string
+--- @return boolean
 M.is_in_diffview = function(buf_name)
   return string.sub(buf_name, 1, 11) == 'diffview://'
 end
 
+--- @param buf_name string
+--- @return boolean
 M.is_in_codediff = function(buf_name)
   return string.sub(buf_name, 1, 12) == 'codediff:///'
 end
 
+--- @param buf_name string
+--- @param cb GHLiteStringCallback
 M.get_diffview_filename = function(buf_name, cb)
   local view = require('diffview.lib').get_current_view()
   local file = view:infer_cur_file()
@@ -500,6 +536,8 @@ M.get_diffview_filename = function(buf_name, cb)
   end
 end
 
+--- @param buf_name string
+--- @param cb GHLiteStringNilCallback
 M.get_codediff_filename = function(buf_name, cb)
   -- Try using CodeDiff API first (Option C)
   local has_codediff, virtual_file = pcall(require, 'codediff.core.virtual_file')
@@ -571,6 +609,8 @@ M.get_codediff_filename = function(buf_name, cb)
   end
 end
 
+--- @param bufnr integer
+--- @param filename string
 M.load_comments_on_buffer_by_filename = function(bufnr, filename)
   vim.schedule(function()
     if not vim.api.nvim_buf_is_valid(bufnr) then
@@ -580,6 +620,7 @@ M.load_comments_on_buffer_by_filename = function(bufnr, filename)
 
     config.log('load_comments_on_buffer filename', filename)
     if state.comments_list[filename] ~= nil then
+      --- @type GHLiteDiagnostic[]
       local diagnostics = {}
       for _, comment in pairs(state.comments_list[filename]) do
         if #comment.comments > 0 then

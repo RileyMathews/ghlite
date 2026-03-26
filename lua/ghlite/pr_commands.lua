@@ -5,8 +5,13 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
+require('ghlite.types')
+
+--- @class GHLitePrCommandsModule
 local M = {}
 
+--- @param prompt string
+--- @param callback fun(pr: PullRequestListItem|nil)
 local function ui_selectPR(prompt, callback)
   utils.notify('Loading PR list...')
   gh.get_pr_list(function(prs)
@@ -18,6 +23,8 @@ local function ui_selectPR(prompt, callback)
     vim.schedule(function()
       vim.ui.select(prs, {
         prompt = prompt,
+        --- @param pr PullRequestListItem
+        --- @return string
         format_item = function(pr)
           local date = pr.createdAt:sub(1, 10)
           local draft = pr.isDraft and ' Draft' or ''
@@ -44,6 +51,7 @@ local function ui_selectPR(prompt, callback)
   end)
 end
 
+--- @return nil
 function M.select()
   ui_selectPR('Select PR:', function(pr)
     if pr ~= nil then
@@ -53,16 +61,19 @@ function M.select()
   end)
 end
 
+--- @return nil
 function M.checkout()
   ui_selectPR('Select PR to checkout:', function(pr)
     if pr ~= nil then
       state.selected_PR = pr
-      gh.checkout_pr(state.selected_PR.number, M.load_pr_view)
+      gh.checkout_pr(pr.number, M.load_pr_view)
     end
   end)
 end
 
+--- @return string[]
 local function format_review_comments_for_pr_view()
+  --- @type string[]
   local review_section = {}
 
   if state.comments_list and next(state.comments_list) then
@@ -112,6 +123,7 @@ local function format_review_comments_for_pr_view()
   return review_section
 end
 
+--- @param pr_info PullRequestInfo|nil
 local function show_pr_info(pr_info)
   if pr_info == nil then
     utils.notify('PR view load failed', vim.log.levels.ERROR)
@@ -119,6 +131,7 @@ local function show_pr_info(pr_info)
   end
 
   vim.schedule(function()
+    --- @type string[]
     local pr_view = {
       string.format('#%d %s', pr_info.number, pr_info.title),
       string.format('Created by %s at %s', pr_info.author.login, pr_info.createdAt),
@@ -202,6 +215,7 @@ local function show_pr_info(pr_info)
         local review_section = format_review_comments_for_pr_view()
         if #review_section > 0 then
           local buf = vim.api.nvim_get_current_buf()
+          --- @type string[]
           local current_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 
           -- Insert review comments before the keymap hints
@@ -298,6 +312,7 @@ local function show_pr_info(pr_info)
   end)
 end
 
+--- @param selected_pr PullRequest|nil
 local function load_pr_view_for_pr(selected_pr)
   if selected_pr == nil then
     utils.notify('No PR selected/checked out', vim.log.levels.WARN)
@@ -309,10 +324,12 @@ local function load_pr_view_for_pr(selected_pr)
   gh.get_pr_info(selected_pr.number, show_pr_info)
 end
 
+--- @return nil
 function M.load_pr_view()
   pr_utils.get_selected_pr(load_pr_view_for_pr)
 end
 
+--- @param on_success fun()|nil
 M.comment_on_pr = function(on_success)
   pr_utils.get_selected_pr(function(selected_pr)
     if selected_pr == nil then
@@ -334,7 +351,7 @@ M.comment_on_pr = function(on_success)
         function(input)
           utils.notify('Sending comment...')
 
-          gh.new_pr_comment(state.selected_PR, input, function(resp)
+          gh.new_pr_comment(selected_pr, input, function(resp)
             if resp ~= nil then
               utils.notify('Comment sent.')
               if type(on_success) == 'function' then
@@ -350,10 +367,12 @@ M.comment_on_pr = function(on_success)
   end)
 end
 
+--- @return nil
 function M.approve_pr()
   pr_utils.get_selected_pr(function(selected_pr)
     if selected_pr == nil then
       utils.notify('No PR selected to approve', vim.log.levels.ERROR)
+      return
     end
 
     utils.notify('PR approve started...')
@@ -363,10 +382,12 @@ function M.approve_pr()
   end)
 end
 
+--- @return nil
 function M.request_changes_pr()
   pr_utils.get_selected_pr(function(selected_pr)
     if selected_pr == nil then
       utils.notify('No PR selected to request changes', vim.log.levels.ERROR)
+      return
     end
 
     vim.schedule(function()
@@ -391,6 +412,7 @@ function M.request_changes_pr()
   end)
 end
 
+--- @return nil
 function M.merge_pr()
   pr_utils.get_selected_pr(function(selected_pr)
     if selected_pr == nil then

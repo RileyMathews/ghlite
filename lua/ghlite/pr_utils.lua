@@ -12,9 +12,10 @@ local utils = require('ghlite.utils')
 
 require('ghlite.types')
 
+--- @class GHLitePrUtilsModule
 local M = {}
 
---- @param cb fun(pr: PullRequest | nil)
+--- @param cb GHLitePullRequestCallback
 function M.get_selected_pr(cb)
   if state.selected_PR ~= nil then
     return cb(state.selected_PR)
@@ -29,21 +30,24 @@ function M.get_selected_pr(cb)
   end)
 end
 
---- @return PullRequest|nil returns checked out pr or nil if user does not approve check out
+--- @param cb GHLitePullRequestCallback
 local function approve_and_chechkout_selected_pr(cb)
   vim.schedule(function()
     local choice = vim.fn.confirm('Do you want to check out selected PR?', '&Yes\n&No', 1)
 
     if choice == 1 then
-      utils.notify(string.format('Checking out PR #%d...', state.selected_PR.number))
-      gh.checkout_pr(state.selected_PR.number, function()
+      --- @type PullRequest
+      local selected_pr = state.selected_PR
+      utils.notify(string.format('Checking out PR #%d...', selected_pr.number))
+      gh.checkout_pr(selected_pr.number, function()
         utils.notify('PR check out finished.')
-        cb(state.selected_PR)
+        cb(selected_pr)
       end)
     end
   end)
 end
 
+--- @param cb GHLiteBooleanCallback
 function M.is_pr_checked_out(cb)
   if state.selected_PR == nil then
     cb(false)
@@ -54,7 +58,7 @@ function M.is_pr_checked_out(cb)
   end
 end
 
---- @return PullRequest|nil returns pull request or nil in case pull request is not checked out
+--- @param cb GHLitePullRequestCallback
 function M.get_checked_out_pr(cb)
   utils.get_current_git_branch_name(function(current_branch)
     if state.selected_PR ~= nil then

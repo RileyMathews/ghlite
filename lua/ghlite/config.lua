@@ -1,5 +1,10 @@
+require('ghlite.types')
+
+--- @class GHLiteConfigModule
+--- @field s GHLiteConfig
 local M = {}
 
+--- @type GHLiteConfig
 M.s = {
   debug = false,
   view_split = 'vsplit',
@@ -34,10 +39,13 @@ M.s = {
   },
 }
 
+--- @param config GHLiteUserConfig|nil
 function M.setup(config)
-  M.s = vim.tbl_deep_extend('force', {}, M.s, config)
+  M.s = vim.tbl_deep_extend('force', {}, M.s, config or {})
 end
 
+--- @param key string
+--- @param message any
 function M.log(key, message)
   if M.s.debug then
     local home = os.getenv('HOME')

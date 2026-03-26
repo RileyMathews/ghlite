@@ -6,8 +6,13 @@ require('ghlite.types')
 
 local f = string.format
 
+--- @class GHLiteGhModule
 local M = {}
 
+--- @generic T
+--- @param str string
+--- @param default T
+--- @return T
 local function parse_or_default(str, default)
   local success, result = pcall(vim.json.decode, str)
   if success then
@@ -17,6 +22,7 @@ local function parse_or_default(str, default)
   return default
 end
 
+--- @param cb GHLitePullRequestCallback
 function M.get_current_pr(cb)
   utils.system_str_cb(
     'gh pr view --json headRefName,headRefOid,number,baseRefName,baseRefOid,reviewDecision',
@@ -43,6 +49,8 @@ function M.get_current_pr(cb)
   )
 end
 
+--- @param pr_number integer
+--- @param cb fun(pr_info: PullRequestInfo|nil)
 function M.get_pr_info(pr_number, cb)
   utils.system_str_cb(
     f(
@@ -61,6 +69,7 @@ function M.get_pr_info(pr_number, cb)
   )
 end
 
+--- @param cb GHLiteStringCallback
 local function get_repo(cb)
   utils.system_str_cb('gh repo view --json nameWithOwner -q .nameWithOwner', function(result)
     if result ~= nil then
@@ -69,14 +78,18 @@ local function get_repo(cb)
   end)
 end
 
---- @params pr_number number
+--- @param pr_number integer
+--- @param cb GHLiteGroupedCommentsCallback
 function M.load_comments(pr_number, cb)
   get_repo(function(repo)
     config.log('repo', repo)
     utils.system_str_cb(f('gh api repos/%s/pulls/%d/comments', repo, pr_number), function(comments_json)
+      --- @type GHLiteRawComment[]
       local comments = parse_or_default(comments_json, {})
       config.log('comments', comments)
 
+      --- @param comment GHLiteRawComment
+      --- @return boolean
       local function is_valid_comment(comment)
         return comment.line ~= vim.NIL
       end
@@ -95,8 +108,13 @@ function M.load_comments(pr_number, cb)
   end)
 end
 
+--- @param pr_number integer
+--- @param body string
+--- @param reply_to integer
+--- @param cb fun(resp: GHLiteResponseWithErrors)
 function M.reply_to_comment(pr_number, body, reply_to, cb)
   get_repo(function(repo)
+    --- @type string[]
     local request = {
       'gh',
       'api',
@@ -111,6 +129,7 @@ function M.reply_to_comment(pr_number, body, reply_to, cb)
     config.log('reply_to_comment request', request)
 
     utils.system_cb(request, function(result)
+      --- @type GHLiteResponseWithErrors
       local resp = parse_or_default(result, { errors = {} })
 
       config.log('reply_to_comment resp', resp)
@@ -119,10 +138,17 @@ function M.reply_to_comment(pr_number, body, reply_to, cb)
   end)
 end
 
+--- @param selected_pr PullRequest
+--- @param body string
+--- @param path string
+--- @param start_line integer
+--- @param line integer
+--- @param cb fun(resp: GHLiteRawComment|GHLiteResponseWithErrors)
 function M.new_comment(selected_pr, body, path, start_line, line, cb)
   get_repo(function(repo)
     local commit_id = selected_pr.headRefOid
 
+    --- @type string[]
     local request = {
       'gh',
       'api',
@@ -149,6 +175,7 @@ function M.new_comment(selected_pr, body, path, start_line, line, cb)
     config.log('new_comment request', request)
 
     utils.system_cb(request, function(result)
+      --- @type GHLiteRawComment|GHLiteResponseWithErrors
       local resp = parse_or_default(result, { errors = {} })
       config.log('new_comment resp', resp)
       cb(resp)
@@ -156,7 +183,11 @@ function M.new_comment(selected_pr, body, path, start_line, line, cb)
   end)
 end
 
+--- @param selected_pr PullRequest
+--- @param body string
+--- @param cb GHLiteSystemCallback
 function M.new_pr_comment(selected_pr, body, cb)
+  --- @type string[]
   local request = {
     'gh',
     'pr',
@@ -168,14 +199,18 @@ function M.new_pr_comment(selected_pr, body, cb)
 
   config.log('new_pr_comment request', request)
 
-  local result = utils.system_cb(request, function(result)
+  utils.system_cb(request, function(result)
     config.log('new_pr_comment resp', result)
     cb(result)
   end)
 end
 
+--- @param comment_id integer
+--- @param body string
+--- @param cb fun(resp: GHLiteResponseWithErrors)
 function M.update_comment(comment_id, body, cb)
   get_repo(function(repo)
+    --- @type string[]
     local request = {
       'gh',
       'api',
@@ -188,6 +223,7 @@ function M.update_comment(comment_id, body, cb)
     config.log('update_comment request', request)
 
     utils.system_cb(request, function(result)
+      --- @type GHLiteResponseWithErrors
       local resp = parse_or_default(result, { errors = {} })
       config.log('update_comment resp', resp)
       cb(resp)
@@ -195,8 +231,11 @@ function M.update_comment(comment_id, body, cb)
   end)
 end
 
+--- @param comment_id integer
+--- @param cb GHLiteSystemCallback
 function M.delete_comment(comment_id, cb)
   get_repo(function(repo)
+    --- @type string[]
     local request = {
       'gh',
       'api',
@@ -213,6 +252,7 @@ function M.delete_comment(comment_id, cb)
   end)
 end
 
+--- @param cb GHLitePullRequestListCallback
 function M.get_pr_list(cb)
   utils.system_str_cb(
     'gh pr list --json number,title,author,createdAt,isDraft,reviewDecision,headRefName,headRefOid,baseRefName,baseRefOid,labels',
@@ -224,26 +264,35 @@ function M.get_pr_list(cb)
           'gh pr list --json number,title,author,createdAt,isDraft,reviewDecision,headRefName,headRefOid,baseRefName,labels',
           function(resp2)
             config.log('get_pr_list resp', resp2)
+            --- @type PullRequestListItem[]
             cb(parse_or_default(resp2, {}))
           end
         )
       else
+        --- @type PullRequestListItem[]
         cb(parse_or_default(resp, {}))
       end
     end
   )
 end
 
---- @param number number
+--- @param number integer
+--- @param cb GHLiteSystemStrCallback
 function M.checkout_pr(number, cb)
   utils.system_str_cb(f('gh pr checkout %d', number), cb)
 end
 
+--- @param number integer
+--- @param cb GHLiteSystemStrCallback
 function M.approve_pr(number, cb)
   utils.system_str_cb(f('gh pr review %s -a', number), cb)
 end
 
+--- @param number integer
+--- @param body string
+--- @param cb GHLiteSystemCallback
 function M.request_changes_pr(number, body, cb)
+  --- @type string[]
   local request = {
     'gh',
     'pr',
@@ -256,20 +305,26 @@ function M.request_changes_pr(number, body, cb)
 
   config.log('request_changes_pr request', request)
 
-  local result = utils.system_cb(request, function(result)
+  utils.system_cb(request, function(result)
     config.log('request_changes_pr resp', result)
     cb(result)
   end)
 end
 
+--- @param number integer
+--- @param cb GHLiteSystemStrCallback
 function M.get_pr_diff(number, cb)
   utils.system_str_cb(f('gh pr diff %s', number), cb)
 end
 
+--- @param number integer
+--- @param options string
+--- @param cb GHLiteSystemStrCallback
 function M.merge_pr(number, options, cb)
   utils.system_str_cb(f('gh pr merge %s %s', number, options), cb)
 end
 
+--- @param cb GHLiteStringCallback
 function M.get_user(cb)
   utils.system_str_cb('gh api user -q .login', function(result)
     if result ~= nil then
