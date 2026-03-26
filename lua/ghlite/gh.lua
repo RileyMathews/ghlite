@@ -330,6 +330,19 @@ function M.get_pr_list(cb)
 end
 
 --- @param number integer
+--- @param cb GHLitePullRequestCallback
+function M.get_pr_by_number(number, cb)
+  utils.system_str_cb(
+    string.format('gh pr view %d --json number,title,author,createdAt,isDraft,reviewDecision,headRefName,headRefOid,baseRefName,baseRefOid,labels', number),
+    function(resp, stderr)
+      config.log('get_pr_by_number resp', resp)
+      --- @type PullRequestListItem
+      cb(parse_or_default(resp, {}))
+    end
+  )
+end
+
+--- @param number integer
 --- @param cb GHLiteSystemStrCallback
 function M.checkout_pr(number, cb)
   utils.system_str_cb(f('gh pr checkout %d', number), cb)

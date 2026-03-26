@@ -59,6 +59,20 @@ function M.select()
   end)
 end
 
+--- @param number integer
+--- @return nil
+function M.open_pr_by_number(number)
+  vim.notify(vim.inspect(number))
+  vim.notify(string.format("opening pr number %s", number))
+  gh.get_pr_by_number(number, function(pr)
+    if pr ~= nil then
+      state.selected_PR = pr
+      M.load_pr_view()
+    end
+  end)
+end
+
+
 --- @return nil
 function M.checkout()
   ui_selectPR('Select PR to checkout:', function(pr)
