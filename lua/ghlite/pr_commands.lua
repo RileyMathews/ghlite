@@ -8,57 +8,6 @@ local utils = require('ghlite.utils')
 --- @class GHLitePrCommandsModule
 local M = {}
 
---- @param prompt string
---- @param callback fun(pr: PullRequestListItem|nil)
-local function ui_selectPR(prompt, callback)
-  utils.notify('Loading PR list...')
-  gh.get_pr_list(function(prs)
-    if #prs == 0 then
-      utils.notify('No PRs found. Make sure you have `gh` configured.', vim.log.levels.WARN)
-      return
-    end
-
-    vim.schedule(function()
-      vim.ui.select(prs, {
-        prompt = prompt,
-        --- @param pr PullRequestListItem
-        --- @return string
-        format_item = function(pr)
-          local date = pr.createdAt:sub(1, 10)
-          local draft = pr.isDraft and ' Draft' or ''
-          local approved = pr.reviewDecision == 'APPROVED' and ' Approved' or ''
-
-          local labels = ''
-          for _, label in pairs(pr.labels) do
-            labels = labels .. ', ' .. label.name
-          end
-
-          return string.format(
-            '#%s: %s (%s, %s%s%s%s)',
-            pr.number,
-            pr.title,
-            pr.author.login,
-            date,
-            draft,
-            approved,
-            labels
-          )
-        end,
-      }, callback)
-    end)
-  end)
-end
-
---- @return nil
-function M.select()
-  ui_selectPR('Select PR:', function(pr)
-    if pr ~= nil then
-      state.selected_PR = pr
-      M.load_pr_view()
-    end
-  end)
-end
-
 --- @param number integer
 --- @return nil
 function M.open_pr_by_number(number)
@@ -67,18 +16,7 @@ function M.open_pr_by_number(number)
   gh.get_pr_by_number(number, function(pr)
     if pr ~= nil then
       state.selected_PR = pr
-      M.load_pr_view()
-    end
-  end)
-end
-
-
---- @return nil
-function M.checkout()
-  ui_selectPR('Select PR to checkout:', function(pr)
-    if pr ~= nil then
-      state.selected_PR = pr
-      gh.checkout_pr(pr.number, M.load_pr_view)
+      gh.checkout_pr(number, M.load_pr_view)
     end
   end)
 end

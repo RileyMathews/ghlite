@@ -305,30 +305,6 @@ function M.delete_comment(comment_id, cb)
   end)
 end
 
---- @param cb GHLitePullRequestListCallback
-function M.get_pr_list(cb)
-  utils.system_str_cb(
-    'gh pr list --json number,title,author,createdAt,isDraft,reviewDecision,headRefName,headRefOid,baseRefName,baseRefOid,labels',
-    function(resp, stderr)
-      config.log('get_pr_list resp', resp)
-      local prefix = 'Unknown JSON field'
-      if string.sub(stderr, 1, #prefix) == prefix then
-        utils.system_str_cb(
-          'gh pr list --json number,title,author,createdAt,isDraft,reviewDecision,headRefName,headRefOid,baseRefName,labels',
-          function(resp2)
-            config.log('get_pr_list resp', resp2)
-            --- @type PullRequestListItem[]
-            cb(parse_or_default(resp2, {}))
-          end
-        )
-      else
-        --- @type PullRequestListItem[]
-        cb(parse_or_default(resp, {}))
-      end
-    end
-  )
-end
-
 --- @param number integer
 --- @param cb GHLitePullRequestCallback
 function M.get_pr_by_number(number, cb)

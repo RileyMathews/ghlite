@@ -33,7 +33,6 @@ M.setup = function(user_config)
   del_user_command('GHLitePROpenComment')
   del_user_command('GHLitePRDeleteComment')
 
-  vim.api.nvim_create_user_command('GHLitePRSelect', pr_commands.select, {})
   vim.api.nvim_create_user_command('GHLitePROpen', function(opts)
     local pr_number = tonumber(opts.args)
 
@@ -44,7 +43,6 @@ M.setup = function(user_config)
 
     pr_commands.open_pr_by_number(pr_number)
   end, { nargs = 1 })
-  vim.api.nvim_create_user_command('GHLitePRCheckout', pr_commands.checkout, {})
   vim.api.nvim_create_user_command('GHLitePRView', pr_commands.load_pr_view, {})
   vim.api.nvim_create_user_command('GHLitePRApprove', pr_commands.approve_pr, {})
   vim.api.nvim_create_user_command('GHLitePRRequestChanges', pr_commands.request_changes_pr, {})
