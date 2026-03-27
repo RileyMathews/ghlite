@@ -353,19 +353,6 @@ function M.request_changes_pr(number, body, cb)
   end)
 end
 
---- @param number integer
---- @param cb GHLiteSystemStrCallback
-function M.get_pr_diff(number, cb)
-  utils.system_str_cb(f('gh pr diff %s', number), cb)
-end
-
---- @param number integer
---- @param options string
---- @param cb GHLiteSystemStrCallback
-function M.merge_pr(number, options, cb)
-  utils.system_str_cb(f('gh pr merge %s %s', number, options), cb)
-end
-
 --- @param cb GHLiteStringCallback
 function M.get_user(cb)
   utils.system_str_cb('gh api user -q .login', function(result)

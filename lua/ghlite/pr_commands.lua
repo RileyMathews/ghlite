@@ -362,25 +362,4 @@ function M.request_changes_pr()
   end)
 end
 
---- @return nil
-function M.merge_pr()
-  pr_utils.get_selected_pr(function(selected_pr)
-    if selected_pr == nil then
-      utils.notify('No PR selected to merge', vim.log.levels.ERROR)
-      return
-    end
-
-    utils.notify('PR merge started...')
-    if selected_pr.reviewDecision == 'APPROVED' then
-      gh.merge_pr(selected_pr.number, config.s.merge.approved, function()
-        utils.notify('PR merge finished.')
-      end)
-    else
-      gh.merge_pr(selected_pr.number, config.s.merge.nonapproved, function()
-        utils.notify('PR merge finished.')
-      end)
-    end
-  end)
-end
-
 return M
