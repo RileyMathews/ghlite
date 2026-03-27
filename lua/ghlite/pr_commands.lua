@@ -122,9 +122,6 @@ local function show_pr_info(pr_info)
     if not utils.is_empty(config.s.keymaps.pr.request_changes) then
       table.insert(pr_view, 'Press ' .. config.s.keymaps.pr.request_changes .. ' to request PR changes')
     end
-    if not utils.is_empty(config.s.keymaps.pr.merge) then
-      table.insert(pr_view, 'Press ' .. config.s.keymaps.pr.merge .. ' to merge PR')
-    end
     if not utils.is_empty(config.s.keymaps.pr.comment) then
       table.insert(pr_view, 'Press ' .. config.s.keymaps.pr.comment .. ' to comment on PR')
     end
@@ -230,15 +227,6 @@ local function show_pr_info(pr_info)
         { noremap = true, silent = true, callback = M.request_changes_pr }
       )
     end
-    if not utils.is_empty(config.s.keymaps.pr.merge) then
-      vim.api.nvim_buf_set_keymap(
-        buf,
-        'n',
-        config.s.keymaps.pr.merge,
-        '',
-        { noremap = true, silent = true, callback = M.merge_pr }
-      )
-    end
     if not utils.is_empty(config.s.keymaps.pr.comment) then
       vim.api.nvim_buf_set_keymap(buf, 'n', config.s.keymaps.pr.comment, '', {
         noremap = true,
@@ -247,15 +235,6 @@ local function show_pr_info(pr_info)
           M.comment_on_pr(M.load_pr_view)
         end,
       })
-    end
-    if not utils.is_empty(config.s.keymaps.pr.diff) then
-      vim.api.nvim_buf_set_keymap(
-        buf,
-        'n',
-        config.s.keymaps.pr.diff,
-        ':GHLitePRDiff<cr>',
-        { noremap = true, silent = true }
-      )
     end
 
     utils.notify('PR view loaded.')

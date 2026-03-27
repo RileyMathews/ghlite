@@ -21,7 +21,6 @@
 --- @field request_changes string|false
 --- @field merge string|false
 --- @field comment string|false
---- @field diff string|false
 
 --- @class GHLiteConfigKeymaps
 --- @field diff GHLiteConfigDiffKeymaps
@@ -35,7 +34,6 @@
 --- @field diff_tool GHLiteDiffTool
 --- @field comment_split GHLiteSplitCommand|false
 --- @field open_command string
---- @field merge GHLiteConfigMergeOptions
 --- @field html_comments_command string[]|false
 --- @field keymaps GHLiteConfigKeymaps
 
@@ -57,7 +55,6 @@
 --- @class GHLiteUserConfigPRKeymaps
 --- @field approve? string|false
 --- @field request_changes? string|false
---- @field merge? string|false
 --- @field comment? string|false
 --- @field diff? string|false
 
@@ -73,7 +70,6 @@
 --- @field diff_tool? GHLiteDiffTool
 --- @field comment_split? GHLiteSplitCommand|false
 --- @field open_command? string
---- @field merge? GHLiteUserConfigMergeOptions
 --- @field html_comments_command? string[]|false
 --- @field keymaps? GHLiteUserConfigKeymaps
 
@@ -89,10 +85,6 @@ M.s = {
   diff_tool = 'auto', -- 'diffview', 'codediff', or 'auto'
   comment_split = 'split',
   open_command = 'open',
-  merge = {
-    approved = '--squash',
-    nonapproved = '--auto --squash',
-  },
   html_comments_command = { 'lynx', '-stdin', '-dump' },
   keymaps = {
     diff = {
