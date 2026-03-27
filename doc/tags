@@ -1,15 +1,12 @@
 :GHLitePRAddComment	ghlite.txt	/*:GHLitePRAddComment*
 :GHLitePRAddPRComment	ghlite.txt	/*:GHLitePRAddPRComment*
 :GHLitePRApprove	ghlite.txt	/*:GHLitePRApprove*
-:GHLitePRCheckout	ghlite.txt	/*:GHLitePRCheckout*
 :GHLitePRDeleteComment	ghlite.txt	/*:GHLitePRDeleteComment*
-:GHLitePRDiff	ghlite.txt	/*:GHLitePRDiff*
 :GHLitePRDiffview	ghlite.txt	/*:GHLitePRDiffview*
 :GHLitePRLoadComments	ghlite.txt	/*:GHLitePRLoadComments*
-:GHLitePRMerge	ghlite.txt	/*:GHLitePRMerge*
+:GHLitePROpen	ghlite.txt	/*:GHLitePROpen*
 :GHLitePROpenComment	ghlite.txt	/*:GHLitePROpenComment*
 :GHLitePRRequestChanges	ghlite.txt	/*:GHLitePRRequestChanges*
-:GHLitePRSelect	ghlite.txt	/*:GHLitePRSelect*
 :GHLitePRUpdateComment	ghlite.txt	/*:GHLitePRUpdateComment*
 :GHLitePRView	ghlite.txt	/*:GHLitePRView*
 ghlite.nvim	ghlite.txt	/*ghlite.nvim*

@@ -1,10 +1,6 @@
 --- @alias GHLiteDiffTool 'auto'|'diffview'|'codediff'
 --- @alias GHLiteSplitCommand ''|'split'|'vsplit'|'tabnew'|string
 
---- @class GHLiteConfigMergeOptions
---- @field approved string
---- @field nonapproved string
-
 --- @class GHLiteConfigDiffKeymaps
 --- @field open_file string|false
 --- @field open_file_tab string|false
@@ -19,7 +15,6 @@
 --- @class GHLiteConfigPRKeymaps
 --- @field approve string|false
 --- @field request_changes string|false
---- @field merge string|false
 --- @field comment string|false
 
 --- @class GHLiteConfigKeymaps
@@ -30,16 +25,11 @@
 --- @class GHLiteConfig
 --- @field debug boolean
 --- @field view_split GHLiteSplitCommand|false
---- @field diff_split GHLiteSplitCommand|false
 --- @field diff_tool GHLiteDiffTool
 --- @field comment_split GHLiteSplitCommand|false
 --- @field open_command string
 --- @field html_comments_command string[]|false
 --- @field keymaps GHLiteConfigKeymaps
-
---- @class GHLiteUserConfigMergeOptions
---- @field approved? string
---- @field nonapproved? string
 
 --- @class GHLiteUserConfigDiffKeymaps
 --- @field open_file? string|false
@@ -56,7 +46,6 @@
 --- @field approve? string|false
 --- @field request_changes? string|false
 --- @field comment? string|false
---- @field diff? string|false
 
 --- @class GHLiteUserConfigKeymaps
 --- @field diff? GHLiteUserConfigDiffKeymaps
@@ -66,7 +55,6 @@
 --- @class GHLiteUserConfig
 --- @field debug? boolean
 --- @field view_split? GHLiteSplitCommand|false
---- @field diff_split? GHLiteSplitCommand|false
 --- @field diff_tool? GHLiteDiffTool
 --- @field comment_split? GHLiteSplitCommand|false
 --- @field open_command? string
@@ -81,7 +69,6 @@ local M = {}
 M.s = {
   debug = false,
   view_split = 'vsplit',
-  diff_split = 'vsplit',
   diff_tool = 'auto', -- 'diffview', 'codediff', or 'auto'
   comment_split = 'split',
   open_command = 'open',
@@ -101,9 +88,7 @@ M.s = {
     pr = {
       approve = 'cA',
       request_changes = 'cR',
-      merge = 'cM',
       comment = 'ca',
-      diff = 'cp',
     },
   },
 }

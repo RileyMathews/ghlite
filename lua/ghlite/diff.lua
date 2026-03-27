@@ -1,12 +1,7 @@
 local comments = require('ghlite.comments')
 local config = require('ghlite.config')
-local gh = require('ghlite.gh')
-local pr_commands = require('ghlite.pr_commands')
 local pr_utils = require('ghlite.pr_utils')
-local state = require('ghlite.state')
 local utils = require('ghlite.utils')
-
---- @alias GHLiteOpenCommand 'edit'|'tabedit'|'split'|'vsplit'
 
 --- @class FileNameAndLinePair
 --- @field [1] string filename

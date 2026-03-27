@@ -24,7 +24,7 @@ stylua --check .
 This plugin does not have automated tests. Manual testing is required:
 1. Install the plugin in Neovim
 2. Navigate to a git repository with GitHub PRs
-3. Test commands like `:GHLitePRSelect`, `:GHLitePRDiff`, etc.
+3. Test commands like `:GHLitePROpen`, `:GHLitePRDiffview`, etc.
 4. Verify GitHub CLI integration works correctly
 
 ### Debugging

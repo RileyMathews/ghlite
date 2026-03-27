@@ -11,8 +11,6 @@ local M = {}
 --- @param number integer
 --- @return nil
 function M.open_pr_by_number(number)
-  vim.notify(vim.inspect(number))
-  vim.notify(string.format("opening pr number %s", number))
   gh.get_pr_by_number(number, function(pr)
     if pr ~= nil then
       state.selected_PR = pr
@@ -124,9 +122,6 @@ local function show_pr_info(pr_info)
     end
     if not utils.is_empty(config.s.keymaps.pr.comment) then
       table.insert(pr_view, 'Press ' .. config.s.keymaps.pr.comment .. ' to comment on PR')
-    end
-    if not utils.is_empty(config.s.keymaps.pr.diff) then
-      table.insert(pr_view, 'Press ' .. config.s.keymaps.pr.diff .. ' to open PR diff')
     end
 
     if #pr_info.comments > 0 then
