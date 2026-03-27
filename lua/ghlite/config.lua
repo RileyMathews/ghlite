@@ -1,27 +1,6 @@
 --- @alias GHLiteDiffTool 'auto'|'diffview'|'codediff'
 --- @alias GHLiteSplitCommand ''|'split'|'vsplit'|'tabnew'|string
 
---- @class GHLiteConfigDiffKeymaps
---- @field open_file string|false
---- @field open_file_tab string|false
---- @field open_file_split string|false
---- @field open_file_vsplit string|false
---- @field approve string|false
---- @field request_changes string|false
-
---- @class GHLiteConfigCommentKeymaps
---- @field send_comment string
-
---- @class GHLiteConfigPRKeymaps
---- @field approve string|false
---- @field request_changes string|false
---- @field comment string|false
-
---- @class GHLiteConfigKeymaps
---- @field diff GHLiteConfigDiffKeymaps
---- @field comment GHLiteConfigCommentKeymaps
---- @field pr GHLiteConfigPRKeymaps
-
 --- @class GHLiteConfig
 --- @field debug boolean
 --- @field view_split GHLiteSplitCommand|false
@@ -29,28 +8,6 @@
 --- @field comment_split GHLiteSplitCommand|false
 --- @field open_command string
 --- @field html_comments_command string[]|false
---- @field keymaps GHLiteConfigKeymaps
-
---- @class GHLiteUserConfigDiffKeymaps
---- @field open_file? string|false
---- @field open_file_tab? string|false
---- @field open_file_split? string|false
---- @field open_file_vsplit? string|false
---- @field approve? string|false
---- @field request_changes? string|false
-
---- @class GHLiteUserConfigCommentKeymaps
---- @field send_comment? string
-
---- @class GHLiteUserConfigPRKeymaps
---- @field approve? string|false
---- @field request_changes? string|false
---- @field comment? string|false
-
---- @class GHLiteUserConfigKeymaps
---- @field diff? GHLiteUserConfigDiffKeymaps
---- @field comment? GHLiteUserConfigCommentKeymaps
---- @field pr? GHLiteUserConfigPRKeymaps
 
 --- @class GHLiteUserConfig
 --- @field debug? boolean
@@ -59,7 +16,6 @@
 --- @field comment_split? GHLiteSplitCommand|false
 --- @field open_command? string
 --- @field html_comments_command? string[]|false
---- @field keymaps? GHLiteUserConfigKeymaps
 
 --- @class GHLiteConfigModule
 --- @field s GHLiteConfig
@@ -73,24 +29,6 @@ M.s = {
   comment_split = 'split',
   open_command = 'open',
   html_comments_command = { 'lynx', '-stdin', '-dump' },
-  keymaps = {
-    diff = {
-      open_file = 'gf',
-      open_file_tab = '',
-      open_file_split = 'o',
-      open_file_vsplit = 'O',
-      approve = 'cA',
-      request_changes = 'cR',
-    },
-    comment = {
-      send_comment = 'c<CR>',
-    },
-    pr = {
-      approve = 'cA',
-      request_changes = 'cR',
-      comment = 'ca',
-    },
-  },
 }
 
 --- @param config GHLiteUserConfig|nil

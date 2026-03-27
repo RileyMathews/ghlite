@@ -5,6 +5,8 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
+local COMMENT_SUBMIT_KEY = 'c<CR>'
+
 --- @class GHLiteQfEntry
 --- @field filename string
 --- @field lnum integer
@@ -264,7 +266,7 @@ M.comment_on_line = function()
           local prompt = '<!-- Type your '
             .. (#conversations > 0 and 'reply' or 'comment')
             .. ' and press '
-            .. config.s.keymaps.comment.send_comment
+            .. COMMENT_SUBMIT_KEY
             .. ': -->'
 
           utils.get_comment(
@@ -272,7 +274,7 @@ M.comment_on_line = function()
             config.s.comment_split,
             prompt,
             { prompt, '' },
-            config.s.keymaps.comment.send_comment,
+            COMMENT_SUBMIT_KEY,
             function(input)
               --- @param grouped_comment GroupedComment
               local function reply(grouped_comment)
@@ -408,14 +410,14 @@ end
 --- @param conversation GroupedComment
 --- @return nil
 local function edit_comment_body(comment, conversation)
-  local prompt = '<!-- Change your comment and press ' .. config.s.keymaps.comment.send_comment .. ': -->'
+  local prompt = '<!-- Change your comment and press ' .. COMMENT_SUBMIT_KEY .. ': -->'
 
   utils.get_comment(
     'PR edit comment' .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
     config.s.comment_split,
     prompt,
     vim.split(prompt .. '\n' .. comment.body, '\n'),
-    config.s.keymaps.comment.send_comment,
+    COMMENT_SUBMIT_KEY,
     function(input)
       utils.notify('Updating comment...')
       gh.update_comment(comment.id, input, function(resp)

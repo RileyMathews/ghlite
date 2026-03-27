@@ -5,12 +5,15 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
+local COMMENT_SUBMIT_KEY = 'c<CR>'
+
 --- @class GHLitePrCommandsModule
 local M = {}
 
 --- @param number integer
 --- @return nil
 function M.open_pr_by_number(number)
+  vim.notify("checking out relavent commits...")
   gh.get_pr_by_number(number, function(pr)
     if pr ~= nil then
       state.selected_PR = pr
@@ -113,17 +116,6 @@ local function show_pr_info(pr_info)
       table.insert(pr_view, line)
     end
 
-    table.insert(pr_view, '')
-    if not utils.is_empty(config.s.keymaps.pr.approve) then
-      table.insert(pr_view, 'Press ' .. config.s.keymaps.pr.approve .. ' to approve PR')
-    end
-    if not utils.is_empty(config.s.keymaps.pr.request_changes) then
-      table.insert(pr_view, 'Press ' .. config.s.keymaps.pr.request_changes .. ' to request PR changes')
-    end
-    if not utils.is_empty(config.s.keymaps.pr.comment) then
-      table.insert(pr_view, 'Press ' .. config.s.keymaps.pr.comment .. ' to comment on PR')
-    end
-
     if #pr_info.comments > 0 then
       table.insert(pr_view, '')
       table.insert(pr_view, 'Comments:')
@@ -160,23 +152,11 @@ local function show_pr_info(pr_info)
           --- @type string[]
           local current_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 
-          -- Insert review comments before the keymap hints
           local insert_position = #current_lines
-          for i = #current_lines, 1, -1 do
-            if current_lines[i]:match('^Press .* to ') then
-              insert_position = i - 1
-            else
-              break
-            end
-          end
 
-          -- Add review comments section
           for i, line in ipairs(review_section) do
             table.insert(current_lines, insert_position + i, line)
           end
-
-          -- Add an empty line before keymap hints
-          table.insert(current_lines, insert_position + #review_section + 1, '')
 
           -- Temporarily make buffer modifiable to update it
           vim.bo[buf].readonly = false
@@ -203,34 +183,6 @@ local function show_pr_info(pr_info)
 
     vim.bo[buf].readonly = true
     vim.bo[buf].modifiable = false
-
-    if not utils.is_empty(config.s.keymaps.pr.approve) then
-      vim.api.nvim_buf_set_keymap(
-        buf,
-        'n',
-        config.s.keymaps.pr.approve,
-        '',
-        { noremap = true, silent = true, callback = M.approve_pr }
-      )
-    end
-    if not utils.is_empty(config.s.keymaps.pr.request_changes) then
-      vim.api.nvim_buf_set_keymap(
-        buf,
-        'n',
-        config.s.keymaps.pr.request_changes,
-        '',
-        { noremap = true, silent = true, callback = M.request_changes_pr }
-      )
-    end
-    if not utils.is_empty(config.s.keymaps.pr.comment) then
-      vim.api.nvim_buf_set_keymap(buf, 'n', config.s.keymaps.pr.comment, '', {
-        noremap = true,
-        silent = true,
-        callback = function()
-          M.comment_on_pr(M.load_pr_view)
-        end,
-      })
-    end
 
     utils.notify('PR view loaded.')
   end)
@@ -262,16 +214,14 @@ M.comment_on_pr = function(on_success)
     end
 
     vim.schedule(function()
-      local prompt = '<!-- Type your PR comment and press '
-        .. config.s.keymaps.comment.send_comment
-        .. ' to comment: -->'
+      local prompt = '<!-- Type your PR comment and press ' .. COMMENT_SUBMIT_KEY .. ' to comment: -->'
 
       utils.get_comment(
         'PR Comment: ' .. selected_pr.number .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
         config.s.comment_split,
         prompt,
         { prompt, '' },
-        config.s.keymaps.comment.send_comment,
+        COMMENT_SUBMIT_KEY,
         function(input)
           utils.notify('Sending comment...')
 
@@ -315,16 +265,14 @@ function M.request_changes_pr()
     end
 
     vim.schedule(function()
-      local prompt = '<!-- Type your comment and press '
-        .. config.s.keymaps.comment.send_comment
-        .. ' to request PR changes: -->'
+      local prompt = '<!-- Type your comment and press ' .. COMMENT_SUBMIT_KEY .. ' to request PR changes: -->'
 
       utils.get_comment(
         'PR Request Changes: ' .. selected_pr.number .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
         config.s.comment_split,
         prompt,
         { prompt, '' },
-        config.s.keymaps.comment.send_comment,
+        COMMENT_SUBMIT_KEY,
         function(input)
           utils.notify('PR request changes started...')
           gh.request_changes_pr(selected_pr.number, input, function()

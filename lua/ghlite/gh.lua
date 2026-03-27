@@ -321,6 +321,9 @@ end
 --- @param number integer
 --- @param cb GHLiteSystemStrCallback
 function M.checkout_pr(number, cb)
+  utils.system_str_cb(f('gh pr view %d --json baseRefName --jq .baseRefName', number), function(base)
+    utils.system_str_cb(f('git fetch origin %s', base))
+  end)
   utils.system_str_cb(f('gh pr checkout %d', number), cb)
 end
 

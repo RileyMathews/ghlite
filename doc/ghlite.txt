@@ -28,51 +28,42 @@ INSTALLATION                        *ghlite.nvim-installation*
 
 Using lazy.nvim:
 
-NOTE: Default config is shown below. Skip settings if you are fine with defaults.
+Recommended config. This reproduces the current intended workflow using the Lua
+API directly.
 
 >lua
   {
     'daliusd/ghlite.nvim',
     config = function()
-      require('ghlite').setup({
+      local ghlite = require('ghlite')
+
+      ghlite.setup({
         debug = false, -- if set to true debugging information is written to ~/.ghlite.log file
         view_split = 'vsplit', -- set to empty string '' to open in active buffer, use 'tabnew' to open in tab
-        diff_tool = 'auto', -- 'diffview', 'codediff', or 'auto' - which tool to use for GHLitePRDiffview
+        diff_tool = 'auto', -- 'diffview', 'codediff', or 'auto' - which tool to use for ghlite.load_pr_diffview()
         comment_split = 'split', -- set to empty string '' to open in active buffer, use 'tabnew' to open in tab
         open_command = 'open', -- open command to use, e.g. on Linux you might want to use xdg-open
         html_comments_command = { 'lynx', '-stdin', '-dump' }, -- command to render HTML comments in PR view
-        -- override default keymaps with the ones you prefer
-        -- set keymap to false or '' to disable it
-        keymaps = {
-          diff = {
-            open_file = 'gf',
-            open_file_tab = '',
-            open_file_split = 'o',
-            open_file_vsplit = 'O',
-            approve = 'cA',
-            request_changes = 'cR',
-          },
-          comment = {
-            send_comment = 'c<CR>' -- this one cannot be disabled
-          },
-          pr = {
-            approve = 'cA',
-            request_changes = 'cR',
-            comment = 'ca',
-          },
-        },
       })
+
+      vim.keymap.set('n', '<leader>uv', ghlite.load_pr_view, { silent = true, desc = 'PR View' })
+      vim.keymap.set('n', '<leader>uu', ghlite.load_comments, { silent = true, desc = 'PR Load Comments' })
+      vim.keymap.set('n', '<leader>ul', ghlite.load_pr_diffview, { silent = true, desc = 'PR Diffview' })
+      vim.keymap.set('n', '<leader>up', function()
+        local pr_number = tonumber(vim.fn.input('PR number: '))
+        if pr_number ~= nil then
+          ghlite.open_pr(pr_number)
+        end
+      end, { silent = true, desc = 'Open PR by number' })
+      vim.keymap.set('n', '<leader>ua', ghlite.approve_pr, { silent = true, desc = 'PR Approve' })
+      vim.keymap.set('n', '<leader>ur', ghlite.request_changes_pr, { silent = true, desc = 'PR Request changes' })
+      vim.keymap.set('n', '<leader>uc', ghlite.comment_on_pr, { silent = true, desc = 'PR top-level comment' })
+      vim.keymap.set('n', '<leader>um', ghlite.comment_on_line, { silent = true, desc = 'PR Add comment' })
+      vim.keymap.set('x', '<leader>um', ghlite.comment_on_line, { silent = true, desc = 'PR Add comment' })
+      vim.keymap.set('n', '<leader>ue', ghlite.update_comment, { silent = true, desc = 'PR Update comment' })
+      vim.keymap.set('n', '<leader>ud', ghlite.delete_comment, { silent = true, desc = 'PR Delete comment' })
+      vim.keymap.set('n', '<leader>ug', ghlite.open_comment, { silent = true, desc = 'PR Open comment' })
     end,
-    keys = {
-      { '<leader>uv', ':GHLitePRView<cr>',          silent = true, desc = 'PR View' },
-      { '<leader>uu', ':GHLitePRLoadComments<cr>',  silent = true, desc = 'PR Load Comments' },
-      { '<leader>ul', ':GHLitePRDiffview<cr>',      silent = true, desc = 'PR Diffview' },
-      { '<leader>ua', ':GHLitePRAddComment<cr>',    silent = true, desc = 'PR Add comment' },
-      { '<leader>ua', ':GHLitePRAddComment<cr>',    mode = 'x',    silent = true,             desc = 'PR Add comment' },
-      { '<leader>uc', ':GHLitePRUpdateComment<cr>', silent = true, desc = 'PR Update comment' },
-      { '<leader>ud', ':GHLitePRDeleteComment<cr>', silent = true, desc = 'PR Delete comment' },
-      { '<leader>ug', ':GHLitePROpenComment<cr>',   silent = true, desc = 'PR Open comment' },
-    }
   }
 <
 
@@ -84,68 +75,61 @@ Quick PR Review                     *ghlite.nvim-quick-pr-review*
 
 If you want to review a PR without manually checking out branches first:
 
-- Run `:GHLitePROpen <number>` to open a PR by number. This checks out the PR
-  branch and opens the PR view.
+- Call `require('ghlite').open_pr(<number>)` to open a PR by number. This checks
+  out the PR branch and opens the PR view.
 
-- Run `:GHLitePRDiffview` to open the PR diff in diffview.nvim or codediff.nvim.
-  Review comments are loaded as diagnostics in the diff buffers.
+- Call `require('ghlite').load_pr_diffview()` to open the PR diff in
+  diffview.nvim or codediff.nvim. Review comments are loaded as diagnostics in
+  the diff buffers.
 
-- Run `:GHLitePRAddComment` to comment in existing conversations or start the
-  new one directly in diff view. Alternatively you can use
-  `:GHLitePROpenComment` to open comments in browser.
+- Call `require('ghlite').comment_on_line()` to comment in existing
+  conversations or start a new one directly in diff view. Alternatively you can
+  use `require('ghlite').open_comment()` to open comments in browser.
 
-- Run `:GHLitePRApprove` to approve PR if everything is OK. you can use
-  `ca` in diff and pr views.
+- Call `require('ghlite').approve_pr()` to approve the selected PR.
 
-- Run `:GHLitePRRequestChanges` to request changes on PR if something is
-  wrong. you can use `cr` in diff and pr views.
+- Call `require('ghlite').request_changes_pr()` to request changes on the
+  selected PR.
 
 ==============================================================================
 Thorough PR Review                  *ghlite.nvim-thorough-pr-review*
 
 If you want to review both the diff and the surrounding checked-out code:
 
-- Run `:GHLitePROpen <number>` to check out the PR branch and open the PR view.
-  You can open `:GHLitePRView` anytime later to refresh it. If you already have
-  the PR branch checked out, the plugin can resolve the PR from the current
-  branch.
+- Call `require('ghlite').open_pr(<number>)` to check out the PR branch and
+  open the PR view. You can call `require('ghlite').load_pr_view()` anytime
+  later to refresh it. If you already have the PR branch checked out, the
+  plugin can resolve the PR from the current branch.
 
-- Run `:GHLitePRDiffview` to review the PR diff. Comments are shown as
-  diagnostics in the diff buffers and in opened files when they map to the PR.
+- Call `require('ghlite').load_pr_diffview()` to review the PR diff. Comments
+  are shown as diagnostics in the diff buffers and in opened files when they
+  map to the PR.
 
-- Run `:GHLitePRLoadComments` to review all comments in the code if diff view
-  is not enough. List of comments is loaded to quickfix and shown in file as
-  diagnostic messages.
+- Call `require('ghlite').load_comments()` to review all comments in the code if
+  diff view is not enough. List of comments is loaded to quickfix and shown in
+  file as diagnostic messages.
 
-- Run `:GHLitePRAddComment` to comment in existing conversations or start the
-  new one. Alternatively you can use `:GHLitePROpenComment` to open comments in
-  browser.
+- Call `require('ghlite').comment_on_line()` to comment in existing
+  conversations or start a new one. Alternatively you can use
+  `require('ghlite').open_comment()` to open comments in browser.
 
-- Run `:GHLitePRApprove` to approve PR if everything is OK. you can use
-  `ca` in diff and pr views.
+- Call `require('ghlite').approve_pr()` to approve the selected PR.
 
-- Run `:GHLitePRRequestChanges` to request changes on PR if something is
-  wrong. you can use `cr` in diff and pr views.
-
-==============================================================================
-COMMANDS                            *ghlite.nvim-commands*
+- Call `require('ghlite').request_changes_pr()` to request changes on the
+  selected PR.
 
 ==============================================================================
-:GHLitePROpen                       *:GHLitePROpen*
-
-This command opens a PR by number, checks out its branch, and then opens the PR
-view.
+LUA API                             *ghlite.nvim-api*
 
 ==============================================================================
-:GHLitePRView                       *:GHLitePRView*
+open_pr(number)                     *ghlite.open_pr()*
 
-This command shows PR information (wrapper for `gh pr view`).
+Opens a PR by number, checks out its branch, and then opens the PR view.
 
-Supported key bindings:
+==============================================================================
+load_pr_view()                      *ghlite.load_pr_view()*
 
-* `cA` to approve PR
-
-* `ca` to write top level PR comment
+Shows PR information (wrapper for `gh pr view`).
 
 Note: You can use default vim shortcuts as well, like `gx` to open links in
 this view.
@@ -161,36 +145,35 @@ Plugin searches for html tag and only then passes comment through
 `html_comments_command` as `false`.
 
 ==============================================================================
-:GHLitePRApprove                    *:GHLitePRApprove*
+approve_pr()                        *ghlite.approve_pr()*
 
-This command approves selected PR.
-
-==============================================================================
-:GHLitePRRequestChanges             *:GHLitePRRequestChanges*
-
-This command request changes on PR.
-
-============================================================================== 
-:GHLitePRAddPRComment               *:GHLitePRAddPRComment*
-
-This command allows to comment on PR at top level (vs commenting on the code).
+Approves the selected PR.
 
 ==============================================================================
-:GHLitePRLoadComments               *:GHLitePRLoadComments*
+request_changes_pr()                *ghlite.request_changes_pr()*
 
-This command loads PR comments. Only non-outdated review comments are loaded,
-PR comments are not loaded. Comments are loaded to quickfix list and to buffer
-diagnostics on buffer load. Navigate quickfix list using `cnext` and `cprev`
-(assumption here that you are using quickfix list in general).
+Requests changes on the selected PR.
+
+==============================================================================
+comment_on_pr()                     *ghlite.comment_on_pr()*
+
+Comments on the PR at the top level, instead of commenting on code.
+
+==============================================================================
+load_comments()                     *ghlite.load_comments()*
+
+Loads PR comments. Only non-outdated review comments are loaded, PR comments are
+not loaded. Comments are loaded to quickfix list and to buffer diagnostics on
+buffer load. Navigate quickfix list using `cnext` and `cprev` (assumption here
+that you are using quickfix list in general).
 
 NOTE: You must check out the git branch related to the PR, either with
-`:GHLitePROpen <number>` or by using other tools.
-
+`require('ghlite').open_pr(<number>)` or by using other tools.
 
 ==============================================================================
-:GHLitePRDiffview                   *:GHLitePRDiffview*
+load_pr_diffview()                  *ghlite.load_pr_diffview()*
 
-This command shows PR diff using either Diffview.nvim
+Shows PR diff using either Diffview.nvim
 (https://github.com/sindrets/diffview.nvim) or codediff.nvim
 (https://github.com/esmuellert/codediff.nvim), depending on the `diff_tool`
 configuration option:
@@ -208,34 +191,30 @@ changes in your main branch and your branch does not have changes from main
 branch, then you will be shown that some things are missing in your branch.
 
 ==============================================================================
-:GHLitePRAddComment                 *:GHLitePRAddComment*
+comment_on_line()                   *ghlite.comment_on_line()*
 
-This command opens buffer where you can write your comment.
+Opens a buffer where you can write your comment.
 
 If you want to create multi-line comment then select multiple lines using
 visual mode.
 
-Supported key bindings:
-
-* c-enter:
-
-    * If there is already loaded comment on cursor line (using
-      `GHLitePRLoadComments` command) then comment is added as reply to thread.
-
-    * If there is no comment on line then new conversation is started.
+- `c<CR>` submits the comment buffer.
+- If there is already loaded comment on cursor line (using `load_comments()`)
+  then comment is added as reply to thread.
+- If there is no comment on line then new conversation is started.
 
 ==============================================================================
-:GHLitePRUpdateComment              *:GHLitePRUpdateComment*
+update_comment()                    *ghlite.update_comment()*
 
-This command updates selected comment.
-
-==============================================================================
-:GHLitePRDeleteComment              *:GHLitePRDeleteComment*
-
-This command deletes selected comment.
+Updates selected comment.
 
 ==============================================================================
-:GHLitePROpenComment                *:GHLitePROpenComment*
+delete_comment()                    *ghlite.delete_comment()*
+
+Deletes selected comment.
+
+==============================================================================
+open_comment()                      *ghlite.open_comment()*
 
 Opens comment under cursor in browser using `open_command` command (default
 `open`).
