@@ -29,7 +29,9 @@ local function format_review_comments_for_pr_view()
 
   if state.comments_list and next(state.comments_list) then
     table.insert(review_section, '')
-    table.insert(review_section, '## Review Comments')
+    table.insert(review_section, '---')
+    table.insert(review_section, '')
+    table.insert(review_section, '## 👀 Review Comments')
     table.insert(review_section, '')
 
     local filenames = {}
@@ -45,25 +47,49 @@ local function format_review_comments_for_pr_view()
         return a.line < b.line
       end)
 
+      local comment_group_count = 0
+      for _ in pairs(comments_in_file) do
+        comment_group_count = comment_group_count + 1
+      end
+
+      local processed_groups = 0
       for _, comment_group in pairs(comments_in_file) do
         if #comment_group.comments > 0 then
+          processed_groups = processed_groups + 1
           local relative_filename = filename:match('^.*/(.*)$') or filename
-          table.insert(review_section, string.format('### %s:%d', relative_filename, comment_group.line))
+          table.insert(review_section, string.format('### 📄 %s:%d', relative_filename, comment_group.line))
           table.insert(review_section, '')
 
-          for _, comment in pairs(comment_group.comments) do
+          for i, comment in ipairs(comment_group.comments) do
             local comment_body = string.gsub(comment.body, '\r', '')
             local comment_lines = vim.split(comment_body, '\n')
 
-            if comment == comment_group.comments[1] then
-              table.insert(review_section, string.format('> **%s** at %s:', comment.user, comment.updated_at))
+            if i == 1 then
+              table.insert(review_section, string.format('**👤 %s** · %s', comment.user, comment.updated_at))
+
+              -- Show diff hunk for the first comment only
+              if comment.diff_hunk and comment.diff_hunk ~= '' then
+                table.insert(review_section, '')
+                table.insert(review_section, '**💻 Code:**')
+                table.insert(review_section, '```diff')
+                for _, hunk_line in ipairs(vim.split(comment.diff_hunk, '\n')) do
+                  table.insert(review_section, hunk_line)
+                end
+                table.insert(review_section, '```')
+                table.insert(review_section, '')
+              end
             else
-              table.insert(review_section, string.format('> **%s** replied at %s:', comment.user, comment.updated_at))
+              table.insert(review_section, string.format('↳ **👤 %s** · %s', comment.user, comment.updated_at))
             end
 
             for _, line in ipairs(comment_lines) do
               table.insert(review_section, '> ' .. line)
             end
+            table.insert(review_section, '')
+          end
+
+          if processed_groups < comment_group_count or filename ~= filenames[#filenames] then
+            table.insert(review_section, '---')
             table.insert(review_section, '')
           end
         end
@@ -84,18 +110,20 @@ local function show_pr_info(pr_info)
   vim.schedule(function()
     --- @type string[]
     local pr_view = {
-      string.format('#%d %s', pr_info.number, pr_info.title),
-      string.format('Created by %s at %s', pr_info.author.login, pr_info.createdAt),
-      string.format('URL: %s', pr_info.url),
-      string.format('Changed files: %d', pr_info.changedFiles),
+      '## 📋 PR Info',
+      string.format('🔢 **#%d** %s', pr_info.number, pr_info.title),
+      string.format('👤 **Author:** %s', pr_info.author.login),
+      string.format('🕐 **Created:** %s', pr_info.createdAt),
+      string.format('🔗 **URL:** %s', pr_info.url),
+      string.format('📁 **Changed files:** %d', pr_info.changedFiles),
     }
 
     if pr_info.isDraft then
-      table.insert(pr_view, 'Draft')
+      table.insert(pr_view, '📝 **Status:** Draft')
     end
 
     if #pr_info.labels > 0 then
-      local labels = 'Labels: '
+      local labels = '🏷️ **Labels:** '
       for idx, label in pairs(pr_info.labels) do
         labels = labels .. (idx > 1 and ', ' or '') .. label.name
       end
@@ -103,13 +131,43 @@ local function show_pr_info(pr_info)
     end
 
     if #pr_info.reviews > 0 then
-      local reviews = 'Reviews: '
-      for idx, review in pairs(pr_info.reviews) do
-        reviews = reviews .. (idx > 1 and ', ' or '') .. string.format('%s (%s)', review.author.login, review.state)
+      -- Build map of reviewer to most recent review state
+      -- Reviews are returned in chronological order, so later entries are more recent
+      local reviewer_states = {}
+      for _, review in ipairs(pr_info.reviews) do
+        local reviewer = review.author.login
+        -- Skip if it's the PR author
+        if reviewer ~= pr_info.author.login then
+          -- Map API state to human-readable format
+          local state_label = review.state
+          if review.state == 'APPROVED' then
+            state_label = 'Approved'
+          elseif review.state == 'CHANGES_REQUESTED' then
+            state_label = 'Requested Changes'
+          elseif review.state == 'COMMENTED' then
+            state_label = 'Commented'
+          end
+          -- Simply store/overwrite - later entries in the array are more recent
+          reviewer_states[reviewer] = state_label
+        end
       end
-      table.insert(pr_view, reviews)
+      
+      -- Build the activity summary line
+      if next(reviewer_states) then
+        local activity_parts = {}
+        for reviewer, state in pairs(reviewer_states) do
+          table.insert(activity_parts, string.format('%s (%s)', reviewer, state))
+        end
+        -- Sort alphabetically for consistent display
+        table.sort(activity_parts)
+        table.insert(pr_view, '📊 **Activity Summary:** ' .. table.concat(activity_parts, ', '))
+      end
     end
 
+    table.insert(pr_view, '')
+    table.insert(pr_view, '---')
+    table.insert(pr_view, '')
+    table.insert(pr_view, '## 📝 Description')
     table.insert(pr_view, '')
     local body = string.gsub(pr_info.body, '\r', '')
     for _, line in ipairs(vim.split(body, '\n')) do
@@ -118,11 +176,14 @@ local function show_pr_info(pr_info)
 
     if #pr_info.comments > 0 then
       table.insert(pr_view, '')
-      table.insert(pr_view, 'Comments:')
+      table.insert(pr_view, '---')
+      table.insert(pr_view, '')
+      table.insert(pr_view, '## 💬 Discussion')
       table.insert(pr_view, '')
 
-      for _, comment in pairs(pr_info.comments) do
-        table.insert(pr_view, string.format('✍️ %s at %s:', comment.author.login, comment.createdAt))
+      for i, comment in ipairs(pr_info.comments) do
+        table.insert(pr_view, string.format('### 👤 %s · %s', comment.author.login, comment.createdAt))
+        table.insert(pr_view, '')
 
         local comment_body = string.gsub(comment.body, '\r', '')
 
@@ -139,7 +200,13 @@ local function show_pr_info(pr_info)
         for _, line in ipairs(vim.split(comment_body, '\n')) do
           table.insert(pr_view, line)
         end
-        table.insert(pr_view, '')
+
+        -- Add separator between comments, but not after the last one
+        if i < #pr_info.comments then
+          table.insert(pr_view, '')
+          table.insert(pr_view, '---')
+          table.insert(pr_view, '')
+        end
       end
     end
 
