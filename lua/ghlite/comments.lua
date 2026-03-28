@@ -1,4 +1,5 @@
 local comments_utils = require('ghlite.comments_utils')
+local config = require('ghlite.config')
 local gh = require('ghlite.gh')
 local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
