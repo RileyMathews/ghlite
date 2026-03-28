@@ -36,7 +36,6 @@ Recommended config. This reproduces the current intended workflow using the Lua 
         debug = false, -- if set to true debugging information is written to ~/.ghlite.log file
         view_split = 'vsplit', -- set to empty string '' to open in active buffer, use 'tabnew' to open in tab
         diff_tool = 'auto', -- 'diffview', 'codediff', or 'auto' - which tool to use for ghlite.load_pr_diffview()
-        comment_split = 'split', -- set to empty string '' to open in active buffer, use 'tabnew' to open in tab
         open_command = 'open', -- open command to use, e.g. on Linux you might want to use xdg-open
         html_comments_command = { 'lynx', '-stdin', '-dump' }, -- command to render HTML comments in PR view
       })
@@ -174,12 +173,13 @@ This command will not show correct diff sometimes if you have gh older than
 
 ### `comment_on_line()`
 
-Opens a buffer where you can write your comment.
+Opens a floating buffer where you can write your comment.
 
 If you want to create multi-line comment then select multiple lines using
 visual mode.
 
-- `c<CR>` submits the comment buffer.
+- `:w` submits the comment buffer and closes it.
+- `q` closes the comment buffer in normal mode.
 - If there is already loaded comment on cursor line (using `load_comments()`)
   then comment is added as reply to thread.
 - If there is no comment on line then new conversation is started.

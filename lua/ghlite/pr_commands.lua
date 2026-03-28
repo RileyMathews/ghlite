@@ -5,8 +5,6 @@ local pr_utils = require('ghlite.pr_utils')
 local state = require('ghlite.state')
 local utils = require('ghlite.utils')
 
-local COMMENT_SUBMIT_KEY = 'c<CR>'
-
 --- @class GHLitePrCommandsModule
 local M = {}
 
@@ -281,14 +279,12 @@ M.comment_on_pr = function(on_success)
     end
 
     vim.schedule(function()
-      local prompt = '<!-- Type your PR comment and press ' .. COMMENT_SUBMIT_KEY .. ' to comment: -->'
+      local prompt = '<!-- Type your PR comment and :w to comment. Press q to close. -->'
 
       utils.get_comment(
         'PR Comment: ' .. selected_pr.number .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
-        config.s.comment_split,
         prompt,
         { prompt, '' },
-        COMMENT_SUBMIT_KEY,
         function(input)
           utils.notify('Sending comment...')
 
@@ -332,14 +328,12 @@ function M.request_changes_pr()
     end
 
     vim.schedule(function()
-      local prompt = '<!-- Type your comment and press ' .. COMMENT_SUBMIT_KEY .. ' to request PR changes: -->'
+      local prompt = '<!-- Type your comment and :w to request changes. Press q to close. -->'
 
       utils.get_comment(
         'PR Request Changes: ' .. selected_pr.number .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
-        config.s.comment_split,
         prompt,
         { prompt, '' },
-        COMMENT_SUBMIT_KEY,
         function(input)
           utils.notify('PR request changes started...')
           gh.request_changes_pr(selected_pr.number, input, function()

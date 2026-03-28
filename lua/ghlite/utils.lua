@@ -86,27 +86,56 @@ function M.notify(message, level)
 end
 
 --- @param buf_name string
---- @param split_command string|false|nil
 --- @param prompt string|nil
 --- @param content string[]
---- @param key_binding string
 --- @param callback GHLiteInputCallback
-function M.get_comment(buf_name, split_command, prompt, content, key_binding, callback)
+function M.get_comment(buf_name, prompt, content, callback)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_name(buf, buf_name)
 
-  vim.bo[buf].buftype = 'nofile'
+  vim.bo[buf].buftype = 'acwrite'
   vim.bo[buf].filetype = 'markdown'
+  vim.bo[buf].bufhidden = 'wipe'
 
-  if split_command then
-    vim.api.nvim_command(split_command)
-  end
-  vim.api.nvim_set_current_buf(buf)
+  local width = math.max(60, math.floor(vim.o.columns * 0.7))
+  local height = math.max(8, math.floor(vim.o.lines * 0.4))
+  local row = math.floor((vim.o.lines - height) / 2) - 1
+  local col = math.floor((vim.o.columns - width) / 2)
+
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = 'editor',
+    width = width,
+    height = height,
+    row = math.max(0, row),
+    col = math.max(0, col),
+    style = 'minimal',
+    border = 'rounded',
+    title = ' GHLite Comment ',
+    title_pos = 'center',
+  })
+
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
-  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+  vim.api.nvim_win_set_cursor(win, { math.min(2, math.max(1, #content)), 0 })
+
+  local submitted = false
+
+  local function close_comment_window()
+    if vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_win_close(win, true)
+    end
+
+    if vim.api.nvim_buf_is_valid(buf) then
+      vim.api.nvim_buf_delete(buf, { force = true })
+    end
+  end
 
   --- @return nil
   local function capture_input_and_close()
+    if submitted then
+      return
+    end
+    submitted = true
+
     --- @type string[]
     local input_lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
     if prompt ~= nil and input_lines[1] == prompt then
@@ -114,24 +143,20 @@ function M.get_comment(buf_name, split_command, prompt, content, key_binding, ca
     end
     local input = table.concat(input_lines, '\n')
 
-    vim.cmd('bwipeout')
+    close_comment_window()
     callback(input)
   end
 
-  vim.api.nvim_buf_set_keymap(
-    buf,
-    'n',
-    key_binding,
-    '',
-    { noremap = true, silent = true, callback = capture_input_and_close }
-  )
-  vim.api.nvim_buf_set_keymap(
-    buf,
-    'i',
-    key_binding,
-    '',
-    { noremap = true, silent = true, callback = capture_input_and_close }
-  )
+  vim.api.nvim_create_autocmd('BufWriteCmd', {
+    buffer = buf,
+    callback = capture_input_and_close,
+  })
+
+  vim.keymap.set('n', 'q', close_comment_window, { buffer = buf, silent = true })
+
+  vim.wo[win].wrap = true
+  vim.wo[win].winblend = 0
+  vim.cmd('startinsert')
 end
 
 return M

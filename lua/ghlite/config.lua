@@ -5,7 +5,7 @@
 --- @field debug boolean
 --- @field view_split GHLiteSplitCommand|false
 --- @field diff_tool GHLiteDiffTool
---- @field comment_split GHLiteSplitCommand|false
+--- @field comment_split GHLiteSplitCommand|false Deprecated and ignored for comment editing
 --- @field open_command string
 --- @field html_comments_command string[]|false
 
@@ -13,7 +13,7 @@
 --- @field debug? boolean
 --- @field view_split? GHLiteSplitCommand|false
 --- @field diff_tool? GHLiteDiffTool
---- @field comment_split? GHLiteSplitCommand|false
+--- @field comment_split? GHLiteSplitCommand|false Deprecated and ignored for comment editing
 --- @field open_command? string
 --- @field html_comments_command? string[]|false
 
