@@ -345,6 +345,91 @@ M.comment_on_line = function()
   end)
 end
 
+--- @param conversation GroupedComment
+--- @return string[]
+local function format_comment_float_lines(conversation)
+  --- @type string[]
+  local lines = {}
+
+  if #conversation.comments > 0 then
+    table.insert(lines, '🪓 Diff hunk:')
+    for _, line in ipairs(vim.split(conversation.comments[1].diff_hunk, '\n')) do
+      table.insert(lines, line)
+    end
+    table.insert(lines, '')
+    table.insert(lines, '---')
+    table.insert(lines, '')
+  end
+
+  table.insert(lines, 'URL: ' .. conversation.url)
+  table.insert(lines, '')
+
+  if
+    #conversation.comments > 0
+    and conversation.comments[1].start_line ~= vim.NIL
+    and conversation.comments[1].start_line ~= conversation.comments[1].line
+  then
+    table.insert(
+      lines,
+      string.format('📓 Comment on lines %d to %d', conversation.comments[1].start_line, conversation.comments[1].line)
+    )
+    table.insert(lines, '')
+  end
+
+  for i, comment in ipairs(conversation.comments) do
+    if i > 1 then
+      table.insert(lines, '---')
+      table.insert(lines, '')
+    end
+
+    table.insert(lines, string.format('✍️ %s at %s:', comment.user, comment.updated_at))
+    for _, line in ipairs(vim.split(string.gsub(comment.body, '\r', ''), '\n')) do
+      table.insert(lines, line)
+    end
+    table.insert(lines, '')
+  end
+
+  return lines
+end
+
+--- @param conversation GroupedComment
+local function open_comment_float(conversation)
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.bo[buf].buftype = 'nofile'
+  vim.bo[buf].filetype = 'markdown'
+  vim.bo[buf].bufhidden = 'wipe'
+
+  local lines = format_comment_float_lines(conversation)
+
+  local width = math.max(60, math.floor(vim.o.columns * 0.7))
+  local height = math.min(math.max(8, math.floor(vim.o.lines * 0.6)), math.max(1, #lines))
+  local row = math.floor((vim.o.lines - height) / 2) - 1
+  local col = math.floor((vim.o.columns - width) / 2)
+
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = 'editor',
+    width = width,
+    height = height,
+    row = math.max(0, row),
+    col = math.max(0, col),
+    style = 'minimal',
+    border = 'rounded',
+    title = ' GHLite Comment Thread ',
+    title_pos = 'center',
+  })
+
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].modifiable = false
+  vim.wo[win].wrap = true
+  vim.wo[win].winblend = 0
+
+  vim.keymap.set('n', 'q', function()
+    if vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_win_close(win, true)
+    end
+  end, { buffer = buf, silent = true })
+end
+
 --- @return nil
 M.open_comment = function()
   get_current_filename_and_line(function(current_filename, _, current_line)
@@ -357,16 +442,16 @@ M.open_comment = function()
 
     vim.schedule(function()
       if #conversations == 1 then
-        utils.system_cb({ config.s.open_command, conversations[1].url })
+        open_comment_float(conversations[1])
       elseif #conversations > 1 then
         vim.ui.select(conversations, {
-          prompt = 'Select conversation to open in browser:',
+          prompt = 'Select conversation to open:',
           format_item = function(comment)
             return string.format('%s', vim.split(comment.content, '\n')[1])
           end,
         }, function(comment)
           if comment ~= nil then
-            utils.system_cb({ config.s.open_command, comment.url })
+            open_comment_float(comment)
           end
         end)
       else

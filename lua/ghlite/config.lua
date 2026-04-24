@@ -6,7 +6,6 @@
 --- @field view_split GHLiteSplitCommand|false
 --- @field diff_tool GHLiteDiffTool
 --- @field comment_split GHLiteSplitCommand|false Deprecated and ignored for comment editing
---- @field open_command string
 --- @field html_comments_command string[]|false
 
 --- @class GHLiteUserConfig
@@ -14,7 +13,6 @@
 --- @field view_split? GHLiteSplitCommand|false
 --- @field diff_tool? GHLiteDiffTool
 --- @field comment_split? GHLiteSplitCommand|false Deprecated and ignored for comment editing
---- @field open_command? string
 --- @field html_comments_command? string[]|false
 
 --- @class GHLiteConfigModule
@@ -27,7 +25,6 @@ M.s = {
   view_split = 'vsplit',
   diff_tool = 'auto', -- 'diffview', 'codediff', or 'auto'
   comment_split = 'split',
-  open_command = 'open',
   html_comments_command = { 'lynx', '-stdin', '-dump' },
 }
 

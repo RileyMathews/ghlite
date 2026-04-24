@@ -36,7 +36,6 @@ Recommended config. This reproduces the current intended workflow using the Lua 
         debug = false, -- if set to true debugging information is written to ~/.ghlite.log file
         view_split = 'vsplit', -- set to empty string '' to open in active buffer, use 'tabnew' to open in tab
         diff_tool = 'auto', -- 'diffview', 'codediff', or 'auto' - which tool to use for ghlite.load_pr_diffview()
-        open_command = 'open', -- open command to use, e.g. on Linux you might want to use xdg-open
         html_comments_command = { 'lynx', '-stdin', '-dump' }, -- command to render HTML comments in PR view
       })
 
@@ -76,7 +75,8 @@ If you want to review a PR without manually checking out branches first:
 
 - Call `require('ghlite').comment_on_line()` to comment in existing
   conversations or start a new one directly in diff view. Alternatively you can
-  use `require('ghlite').open_comment()` to open comments in browser.
+  use `require('ghlite').open_comment()` to open the comment thread under the
+  cursor in a floating buffer.
 
 - Call `require('ghlite').approve_pr()` to approve the selected PR.
 
@@ -102,7 +102,8 @@ If you want to review both the diff and the surrounding checked-out code:
 
 - Call `require('ghlite').comment_on_line()` to comment in existing
   conversations or start a new one. Alternatively you can use
-  `require('ghlite').open_comment()` to open comments in browser.
+  `require('ghlite').open_comment()` to open the comment thread under the cursor
+  in a floating buffer.
 
 - Call `require('ghlite').approve_pr()` to approve the selected PR.
 
@@ -194,5 +195,4 @@ Deletes selected comment.
 
 ### `open_comment()`
 
-Opens comment under cursor in browser using `open_command` command (default
-`open`).
+Opens the comment thread under cursor in a floating buffer.
