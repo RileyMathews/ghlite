@@ -115,6 +115,7 @@ function M.get_comment(buf_name, prompt, content, callback)
   })
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
+  vim.bo[buf].modified = false
   vim.api.nvim_win_set_cursor(win, { math.min(2, math.max(1, #content)), 0 })
 
   local submitted = false
@@ -152,7 +153,12 @@ function M.get_comment(buf_name, prompt, content, callback)
     callback = capture_input_and_close,
   })
 
-  vim.keymap.set('n', 'q', close_comment_window, { buffer = buf, silent = true })
+  vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, {
+    buffer = buf,
+    callback = function()
+      vim.bo[buf].modified = false
+    end,
+  })
 
   vim.wo[win].wrap = true
   vim.wo[win].winblend = 0

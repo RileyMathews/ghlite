@@ -279,7 +279,7 @@ M.comment_on_pr = function(on_success)
     end
 
     vim.schedule(function()
-      local prompt = '<!-- Type your PR comment and :w to comment. Press q to close. -->'
+      local prompt = '<!-- Type your PR comment and :w to comment. Use :q to close. -->'
 
       utils.get_comment(
         'PR Comment: ' .. selected_pr.number .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
@@ -318,12 +318,12 @@ function M.submit_review()
         {
           label = 'Request changes',
           action = 'request_changes',
-          prompt = '<!-- Type your comment and :w to request changes. Press q to close. -->',
+          prompt = '<!-- Type your comment and :w to request changes. Use :q to close. -->',
         },
         {
           label = 'Submit review comment',
           action = 'comment',
-          prompt = '<!-- Type your comment and :w to submit a review comment. Press q to close. -->',
+          prompt = '<!-- Type your comment and :w to submit a review comment. Use :q to close. -->',
         },
       }
 

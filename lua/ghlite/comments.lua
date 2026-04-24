@@ -263,7 +263,7 @@ M.comment_on_line = function()
 
           local prompt = '<!-- Type your '
             .. (#conversations > 0 and 'reply' or 'comment')
-            .. ' and :w to submit. Press q to close. -->'
+            .. ' and :w to submit. Use :q to close. -->'
 
           utils.get_comment(
             (#conversations > 0 and 'PR reply' or 'PR comment') .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
@@ -489,7 +489,7 @@ end
 --- @param conversation GroupedComment
 --- @return nil
 local function edit_comment_body(comment, conversation)
-  local prompt = '<!-- Change your comment and :w to submit. Press q to close. -->'
+  local prompt = '<!-- Change your comment and :w to submit. Use :q to close. -->'
 
   utils.get_comment(
     'PR edit comment' .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
