@@ -9,7 +9,10 @@ local utils = require('ghlite.utils')
 --- @field name string
 
 --- @class GHLiteReview
+--- @field id integer
+--- @field node_id string|nil
 --- @field author GHLiteGitHubUser
+--- @field user GHLiteGitHubUser|nil
 --- @field state string
 
 --- @class GHLitePRComment
@@ -44,6 +47,7 @@ local utils = require('ghlite.utils')
 
 --- @class GHLiteRawComment
 --- @field id integer
+--- @field node_id string|nil
 --- @field html_url string
 --- @field path string
 --- @field line integer|userdata
@@ -157,6 +161,217 @@ function M.load_comments(pr_number, cb)
 
         cb(grouped_comments)
       end)
+    end)
+  end)
+end
+
+--- @param pr_number integer
+--- @param cb fun(review: GHLiteReview|nil)
+function M.get_pending_review(pr_number, cb)
+  get_repo(function(repo)
+    M.get_user(function(user)
+      utils.system_str_cb(f('gh api repos/%s/pulls/%d/reviews', repo, pr_number), function(reviews_json)
+        --- @type GHLiteReview[]
+        local reviews = parse_or_default(reviews_json, {})
+
+        for _, review in ipairs(reviews) do
+          local author = review.user or review.author
+          if review.state == 'PENDING' and author ~= nil and author.login == user then
+            cb(review)
+            return
+          end
+        end
+
+        cb(nil)
+      end)
+    end)
+  end)
+end
+
+--- @param pr_number integer
+--- @param cb fun(review: GHLiteReview|GHLiteResponseWithErrors)
+function M.create_pending_review(pr_number, cb)
+  get_repo(function(repo)
+    --- @type string[]
+    local request = {
+      'gh',
+      'api',
+      '--method',
+      'POST',
+      f('repos/%s/pulls/%d/reviews', repo, pr_number),
+    }
+    config.log('create_pending_review request', request)
+
+    utils.system_cb(request, function(result)
+      --- @type GHLiteReview|GHLiteResponseWithErrors
+      local resp = parse_or_default(result, { errors = {} })
+      config.log('create_pending_review resp', resp)
+      cb(resp)
+    end)
+  end)
+end
+
+--- @param comment table
+--- @return GHLiteRawComment
+local function graphql_comment_to_raw(comment)
+  return {
+    id = comment.databaseId,
+    node_id = comment.id,
+    html_url = comment.url,
+    path = comment.path,
+    line = comment.line,
+    start_line = comment.startLine or vim.NIL,
+    user = comment.author,
+    body = comment.body,
+    updated_at = comment.updatedAt,
+    diff_hunk = comment.diffHunk,
+  }
+end
+
+--- @param pr_number integer
+--- @param review GHLiteReview
+--- @param body string
+--- @param path string|nil
+--- @param start_line integer|nil
+--- @param line integer|nil
+--- @param reply_to string|nil
+--- @param cb fun(resp: GHLiteRawComment|GHLiteResponseWithErrors)
+function M.add_pending_review_comment(pr_number, review, body, path, start_line, line, reply_to, cb)
+  if review.node_id == nil then
+    cb({ errors = {}, message = 'Active pending review is missing its GraphQL node_id.' })
+    return
+  end
+
+  if reply_to ~= nil then
+    local query = [[
+mutation($reviewId: ID!, $replyTo: ID!, $body: String!) {
+  addPullRequestReviewComment(input: {pullRequestReviewId: $reviewId, inReplyTo: $replyTo, body: $body}) {
+    comment { id databaseId url path line startLine author { login } body updatedAt diffHunk }
+  }
+}]]
+    local request = {
+      'gh',
+      'api',
+      'graphql',
+      '-f',
+      'query=' .. query,
+      '-f',
+      'reviewId=' .. review.node_id,
+      '-f',
+      'replyTo=' .. reply_to,
+      '-f',
+      'body=' .. body,
+    }
+    config.log('add_pending_review_reply request', request)
+
+    utils.system_cb(request, function(result)
+      local resp = parse_or_default(result, { errors = {} })
+      config.log('add_pending_review_reply resp', resp)
+      if resp.data ~= nil and resp.data.addPullRequestReviewComment ~= nil then
+        cb(graphql_comment_to_raw(resp.data.addPullRequestReviewComment.comment))
+      else
+        cb(resp)
+      end
+    end)
+    return
+  end
+
+  local query
+  local request = {
+    'gh',
+    'api',
+    'graphql',
+  }
+
+  if start_line ~= line then
+    query = [[
+mutation($reviewId: ID!, $body: String!, $path: String!, $line: Int!, $startLine: Int!) {
+  addPullRequestReviewThread(input: {pullRequestReviewId: $reviewId, body: $body, path: $path, line: $line, side: RIGHT, startLine: $startLine, startSide: RIGHT}) {
+    thread { comments(first: 1) { nodes { id databaseId url path line startLine author { login } body updatedAt diffHunk } } }
+  }
+}]]
+    vim.list_extend(request, {
+      '-f',
+      'query=' .. query,
+      '-f',
+      'reviewId=' .. review.node_id,
+      '-f',
+      'body=' .. body,
+      '-f',
+      'path=' .. path,
+      '-F',
+      'line=' .. line,
+      '-F',
+      'startLine=' .. start_line,
+    })
+  else
+    query = [[
+mutation($reviewId: ID!, $body: String!, $path: String!, $line: Int!) {
+  addPullRequestReviewThread(input: {pullRequestReviewId: $reviewId, body: $body, path: $path, line: $line, side: RIGHT}) {
+    thread { comments(first: 1) { nodes { id databaseId url path line startLine author { login } body updatedAt diffHunk } } }
+  }
+}]]
+    vim.list_extend(request, {
+      '-f',
+      'query=' .. query,
+      '-f',
+      'reviewId=' .. review.node_id,
+      '-f',
+      'body=' .. body,
+      '-f',
+      'path=' .. path,
+      '-F',
+      'line=' .. line,
+    })
+  end
+
+  config.log('add_pending_review_comment request', request)
+
+  utils.system_cb(request, function(result)
+    local resp = parse_or_default(result, { errors = {} })
+    config.log('add_pending_review_comment resp', resp)
+    if resp.data ~= nil and resp.data.addPullRequestReviewThread ~= nil then
+      cb(graphql_comment_to_raw(resp.data.addPullRequestReviewThread.thread.comments.nodes[1]))
+    else
+      cb(resp)
+    end
+  end)
+end
+
+--- @param pr_number integer
+--- @param review_id integer
+--- @param action 'approve'|'request_changes'|'comment'
+--- @param body string|nil
+--- @param cb GHLiteSystemCallback
+function M.submit_pending_review(pr_number, review_id, action, body, cb)
+  local events = {
+    approve = 'APPROVE',
+    request_changes = 'REQUEST_CHANGES',
+    comment = 'COMMENT',
+  }
+
+  get_repo(function(repo)
+    --- @type string[]
+    local request = {
+      'gh',
+      'api',
+      '--method',
+      'POST',
+      f('repos/%s/pulls/%d/reviews/%d/events', repo, pr_number, review_id),
+      '-f',
+      'event=' .. events[action],
+    }
+
+    if body ~= nil and body ~= '' then
+      table.insert(request, '-f')
+      table.insert(request, 'body=' .. body)
+    end
+
+    config.log('submit_pending_review request', request)
+
+    utils.system_cb(request, function(result)
+      config.log('submit_pending_review resp', result)
+      cb(result)
     end)
   end)
 end

@@ -20,6 +20,34 @@ local utils = require('ghlite.utils')
 --- @class GHLiteCommentsModule
 local M = {}
 
+--- @param resp table
+--- @return boolean
+local function is_comment_response(resp)
+  return resp ~= nil
+    and resp['errors'] == nil
+    and resp['message'] == nil
+    and resp.id ~= nil
+    and resp.html_url ~= nil
+    and resp.path ~= nil
+    and resp.line ~= nil
+    and resp.user ~= nil
+    and resp.body ~= nil
+    and resp.updated_at ~= nil
+    and resp.diff_hunk ~= nil
+end
+
+--- @param resp table
+--- @return string
+local function response_error_message(resp)
+  if resp ~= nil and resp['message'] ~= nil then
+    return resp['message']
+  end
+  if resp ~= nil and resp['errors'] ~= nil and resp['errors'][1] ~= nil and resp['errors'][1]['message'] ~= nil then
+    return resp['errors'][1]['message']
+  end
+  return 'Unknown GitHub API response.'
+end
+
 --- @return nil
 local function load_comments_to_quickfix_list()
   --- @type GHLiteQfEntry[]
@@ -242,6 +270,11 @@ M.comment_on_line = function()
       return
     end
 
+    if state.active_review == nil or state.active_review_pr_number ~= selected_pr.number then
+      utils.notify('No active pending review. Run create_review before commenting.', vim.log.levels.WARN)
+      return
+    end
+
     get_current_filename_and_line(function(current_filename, current_start_line, current_line)
       if current_filename == nil or current_start_line == nil or current_line == nil then
         utils.notify('You are on a branch without PR.', vim.log.levels.WARN)
@@ -272,19 +305,34 @@ M.comment_on_line = function()
             function(input)
               --- @param grouped_comment GroupedComment
               local function reply(grouped_comment)
+                local reply_to = grouped_comment.comments[#grouped_comment.comments].node_id
+                if reply_to == nil then
+                  utils.notify('Cannot reply to this thread because the GitHub node_id is missing.', vim.log.levels.WARN)
+                  return
+                end
+
                 utils.notify('Sending reply...')
-                gh.reply_to_comment(selected_pr.number, input, grouped_comment.id, function(resp)
-                  if resp['errors'] == nil then
-                    --- @cast resp GHLiteRawComment
-                    utils.notify('Reply sent.')
-                    local new_comment = comments_utils.convert_comment(resp)
-                    table.insert(grouped_comment.comments, new_comment)
-                    grouped_comment.content = comments_utils.prepare_content(grouped_comment.comments)
-                    M.load_comments_on_current_buffer()
-                  else
-                    utils.notify('Failed to reply to comment.', vim.log.levels.WARN)
+                gh.add_pending_review_comment(
+                  selected_pr.number,
+                  state.active_review,
+                  input,
+                  nil,
+                  nil,
+                  nil,
+                  reply_to,
+                  function(resp)
+                    if is_comment_response(resp) then
+                      --- @cast resp GHLiteRawComment
+                      utils.notify('Reply sent.')
+                      local new_comment = comments_utils.convert_comment(resp)
+                      table.insert(grouped_comment.comments, new_comment)
+                      grouped_comment.content = comments_utils.prepare_content(grouped_comment.comments)
+                      M.load_comments_on_current_buffer()
+                    else
+                      utils.notify('Failed to reply to comment: ' .. response_error_message(resp), vim.log.levels.WARN)
+                    end
                   end
-                end)
+                )
               end
 
               if #conversations == 1 then
@@ -303,14 +351,16 @@ M.comment_on_line = function()
               else
                 if current_filename:sub(1, #git_root) == git_root then
                   utils.notify('Sending comment...')
-                  gh.new_comment(
-                    selected_pr,
+                  gh.add_pending_review_comment(
+                    selected_pr.number,
+                    state.active_review,
                     input,
                     current_filename:sub(#git_root + 2),
                     current_start_line,
                     current_line,
+                    nil,
                     function(resp)
-                      if resp['errors'] == nil then
+                      if is_comment_response(resp) then
                         --- @cast resp GHLiteRawComment
                         local new_comment = comments_utils.convert_comment(resp)
                         --- @type GroupedComment
@@ -331,7 +381,7 @@ M.comment_on_line = function()
                         utils.notify('Comment sent.')
                         M.load_comments_on_current_buffer()
                       else
-                        utils.notify('Failed to send comment.', vim.log.levels.WARN)
+                        utils.notify('Failed to send comment: ' .. response_error_message(resp), vim.log.levels.WARN)
                       end
                     end
                   )

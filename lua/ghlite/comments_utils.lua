@@ -2,6 +2,7 @@ local utils = require('ghlite.utils')
 
 --- @class Comment
 --- @field id integer
+--- @field node_id string|nil
 --- @field url string
 --- @field path string
 --- @field line integer
@@ -27,6 +28,7 @@ local M = {}
 function M.convert_comment(comment)
   return {
     id = comment.id,
+    node_id = comment.node_id,
     url = comment.html_url,
     path = comment.path,
     line = comment.line,

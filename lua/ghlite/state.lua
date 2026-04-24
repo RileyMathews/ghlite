@@ -4,6 +4,15 @@ local M = {}
 --- @type PullRequest|nil
 M.selected_PR = nil
 
+--- @type GHLiteReview|nil
+M.active_review = nil
+
+--- @type integer|nil
+M.active_review_pr_number = nil
+
+--- @type integer|nil
+M.active_review_loading_pr_number = nil
+
 --- @type table<string, GroupedComment[]>
 M.comments_list = {}
 

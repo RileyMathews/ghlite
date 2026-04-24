@@ -8,13 +8,42 @@ local utils = require('ghlite.utils')
 --- @class GHLitePrCommandsModule
 local M = {}
 
+--- @param pr PullRequest
+local function load_active_review(pr)
+  if state.active_review ~= nil and state.active_review_pr_number == pr.number then
+    return
+  end
+
+  state.active_review_loading_pr_number = pr.number
+  gh.get_pending_review(pr.number, function(review)
+    if state.active_review_loading_pr_number ~= pr.number then
+      return
+    end
+
+    state.active_review_loading_pr_number = nil
+
+    if state.active_review ~= nil and state.active_review_pr_number == pr.number then
+      return
+    end
+
+    state.active_review = review
+    state.active_review_pr_number = review ~= nil and pr.number or nil
+    if review ~= nil then
+      utils.notify(string.format('Loaded pending review #%d.', review.id))
+    else
+      utils.notify('No pending review found. Run create_review before commenting.', vim.log.levels.INFO)
+    end
+  end)
+end
+
 --- @param number integer
 --- @return nil
 function M.open_pr_by_number(number)
-  vim.notify("checking out relavent commits...")
+  vim.notify('checking out relevant commits...')
   gh.get_pr_by_number(number, function(pr)
     if pr ~= nil then
       state.selected_PR = pr
+      load_active_review(pr)
       gh.checkout_pr(number, M.load_pr_view)
     end
   end)
@@ -267,7 +296,45 @@ end
 
 --- @return nil
 function M.load_pr_view()
-  pr_utils.get_selected_pr(load_pr_view_for_pr)
+  pr_utils.get_selected_pr(function(selected_pr)
+    if selected_pr ~= nil and (state.active_review == nil or state.selected_PR == nil or state.selected_PR.number ~= selected_pr.number) then
+      load_active_review(selected_pr)
+    end
+    load_pr_view_for_pr(selected_pr)
+  end)
+end
+
+--- @return nil
+function M.create_review()
+  pr_utils.get_selected_pr(function(selected_pr)
+    if selected_pr == nil then
+      utils.notify('No PR selected/checked out', vim.log.levels.WARN)
+      return
+    end
+
+    if state.active_review ~= nil then
+      if state.active_review_pr_number == selected_pr.number then
+        utils.notify(string.format('Pending review #%d is already active.', state.active_review.id))
+        return
+      end
+
+      state.active_review = nil
+      state.active_review_pr_number = nil
+    end
+
+    utils.notify('Creating pending review...')
+    gh.create_pending_review(selected_pr.number, function(resp)
+      if resp['errors'] == nil then
+        --- @cast resp GHLiteReview
+        state.active_review = resp
+        state.active_review_pr_number = selected_pr.number
+        state.active_review_loading_pr_number = nil
+        utils.notify(string.format('Pending review #%d created.', resp.id))
+      else
+        utils.notify('Failed to create pending review.', vim.log.levels.ERROR)
+      end
+    end)
+  end)
 end
 
 --- @param on_success fun()|nil
@@ -339,9 +406,17 @@ function M.submit_review()
 
         local function submit(body)
           utils.notify('PR review submit started...')
-          gh.submit_review(selected_pr.number, selected_action.action, body, function()
-            utils.notify('PR review submit finished.')
-          end)
+          if state.active_review ~= nil and state.active_review_pr_number == selected_pr.number then
+            gh.submit_pending_review(selected_pr.number, state.active_review.id, selected_action.action, body, function()
+              state.active_review = nil
+              state.active_review_pr_number = nil
+              utils.notify('Pending PR review submitted.')
+            end)
+          else
+            gh.submit_review(selected_pr.number, selected_action.action, body, function()
+              utils.notify('PR review submit finished.')
+            end)
+          end
         end
 
         if selected_action.prompt == nil then
