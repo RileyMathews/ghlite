@@ -305,42 +305,57 @@ M.comment_on_pr = function(on_success)
 end
 
 --- @return nil
-function M.approve_pr()
+function M.submit_review()
   pr_utils.get_selected_pr(function(selected_pr)
     if selected_pr == nil then
-      utils.notify('No PR selected to approve', vim.log.levels.ERROR)
-      return
-    end
-
-    utils.notify('PR approve started...')
-    gh.approve_pr(selected_pr.number, function()
-      utils.notify('PR approve finished.')
-    end)
-  end)
-end
-
---- @return nil
-function M.request_changes_pr()
-  pr_utils.get_selected_pr(function(selected_pr)
-    if selected_pr == nil then
-      utils.notify('No PR selected to request changes', vim.log.levels.ERROR)
+      utils.notify('No PR selected to submit review', vim.log.levels.ERROR)
       return
     end
 
     vim.schedule(function()
-      local prompt = '<!-- Type your comment and :w to request changes. Press q to close. -->'
+      local review_actions = {
+        { label = 'Approve', action = 'approve', prompt = nil },
+        {
+          label = 'Request changes',
+          action = 'request_changes',
+          prompt = '<!-- Type your comment and :w to request changes. Press q to close. -->',
+        },
+        {
+          label = 'Submit review comment',
+          action = 'comment',
+          prompt = '<!-- Type your comment and :w to submit a review comment. Press q to close. -->',
+        },
+      }
 
-      utils.get_comment(
-        'PR Request Changes: ' .. selected_pr.number .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
-        prompt,
-        { prompt, '' },
-        function(input)
-          utils.notify('PR request changes started...')
-          gh.request_changes_pr(selected_pr.number, input, function()
-            utils.notify('PR request changes finished.')
+      vim.ui.select(review_actions, {
+        prompt = 'Submit PR review:',
+        format_item = function(item)
+          return item.label
+        end,
+      }, function(selected_action)
+        if selected_action == nil then
+          return
+        end
+
+        local function submit(body)
+          utils.notify('PR review submit started...')
+          gh.submit_review(selected_pr.number, selected_action.action, body, function()
+            utils.notify('PR review submit finished.')
           end)
         end
-      )
+
+        if selected_action.prompt == nil then
+          submit(nil)
+          return
+        end
+
+        utils.get_comment(
+          'PR Review: ' .. selected_pr.number .. ' (' .. os.date('%Y-%m-%d %H:%M:%S') .. ')',
+          selected_action.prompt,
+          { selected_action.prompt, '' },
+          submit
+        )
+      end)
     end)
   end)
 end

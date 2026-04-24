@@ -48,8 +48,7 @@ Recommended config. This reproduces the current intended workflow using the Lua 
           ghlite.open_pr(pr_number)
         end
       end, { silent = true, desc = 'Open PR by number' })
-      vim.keymap.set('n', '<leader>ua', ghlite.approve_pr, { silent = true, desc = 'PR Approve' })
-      vim.keymap.set('n', '<leader>ur', ghlite.request_changes_pr, { silent = true, desc = 'PR Request changes' })
+      vim.keymap.set('n', '<leader>us', ghlite.submit_review, { silent = true, desc = 'PR Submit review' })
       vim.keymap.set('n', '<leader>uc', ghlite.comment_on_pr, { silent = true, desc = 'PR top-level comment' })
       vim.keymap.set('n', '<leader>um', ghlite.comment_on_line, { silent = true, desc = 'PR Add comment' })
       vim.keymap.set('x', '<leader>um', ghlite.comment_on_line, { silent = true, desc = 'PR Add comment' })
@@ -78,10 +77,8 @@ If you want to review a PR without manually checking out branches first:
   use `require('ghlite').open_comment()` to open the comment thread under the
   cursor in a floating buffer.
 
-- Call `require('ghlite').approve_pr()` to approve the selected PR.
-
-- Call `require('ghlite').request_changes_pr()` to request changes on the
-  selected PR.
+- Call `require('ghlite').submit_review()` to choose whether to approve,
+  request changes, or submit a normal review comment on the selected PR.
 
 ### Thorough PR review
 
@@ -105,10 +102,8 @@ If you want to review both the diff and the surrounding checked-out code:
   `require('ghlite').open_comment()` to open the comment thread under the cursor
   in a floating buffer.
 
-- Call `require('ghlite').approve_pr()` to approve the selected PR.
-
-- Call `require('ghlite').request_changes_pr()` to request changes on the
-  selected PR.
+- Call `require('ghlite').submit_review()` to choose whether to approve,
+  request changes, or submit a normal review comment on the selected PR.
 
 ## Lua API
 
@@ -133,13 +128,10 @@ Plugin searches for html tag and only then passes comment through
 `html_comments_command`. You can disable this functionality by setting
 `html_comments_command` as `false`.
 
-### `approve_pr()`
+### `submit_review()`
 
-Approves the selected PR.
-
-### `request_changes_pr()`
-
-Requests changes on the selected PR.
+Opens a picker to approve, request changes, or submit a normal review comment
+on the selected PR.
 
 ### `comment_on_pr()`
 

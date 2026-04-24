@@ -328,30 +328,34 @@ function M.checkout_pr(number, cb)
 end
 
 --- @param number integer
---- @param cb GHLiteSystemStrCallback
-function M.approve_pr(number, cb)
-  utils.system_str_cb(f('gh pr review %s -a', number), cb)
-end
-
---- @param number integer
---- @param body string
+--- @param action 'approve'|'request_changes'|'comment'
+--- @param body string|nil
 --- @param cb GHLiteSystemCallback
-function M.request_changes_pr(number, body, cb)
+function M.submit_review(number, action, body, cb)
+  local flags = {
+    approve = '-a',
+    request_changes = '-r',
+    comment = '-c',
+  }
+
   --- @type string[]
   local request = {
     'gh',
     'pr',
     'review',
     f('%d', number),
-    '-r',
-    '--body',
-    body,
+    flags[action],
   }
 
-  config.log('request_changes_pr request', request)
+  if body ~= nil and body ~= '' then
+    table.insert(request, '--body')
+    table.insert(request, body)
+  end
+
+  config.log('submit_review request', request)
 
   utils.system_cb(request, function(result)
-    config.log('request_changes_pr resp', result)
+    config.log('submit_review resp', result)
     cb(result)
   end)
 end

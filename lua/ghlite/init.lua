@@ -10,8 +10,7 @@ local augroup = vim.api.nvim_create_augroup('GHLite', { clear = true })
 
 M.open_pr = pr_commands.open_pr_by_number
 M.load_pr_view = pr_commands.load_pr_view
-M.approve_pr = pr_commands.approve_pr
-M.request_changes_pr = pr_commands.request_changes_pr
+M.submit_review = pr_commands.submit_review
 M.comment_on_pr = pr_commands.comment_on_pr
 M.load_comments = comments.load_comments
 M.load_pr_diffview = diff.load_pr_diffview
