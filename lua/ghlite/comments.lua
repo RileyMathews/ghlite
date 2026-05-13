@@ -134,6 +134,10 @@ M.load_comments_on_buffer = function(bufnr)
   local buf_name = vim.api.nvim_buf_get_name(bufnr)
 
   if M.is_in_diffview(buf_name) then
+    if state.selected_PR == nil then
+      return
+    end
+
     M.get_diffview_filename(buf_name, function(filename)
       M.load_comments_on_buffer_by_filename(bufnr, filename)
     end)
@@ -142,6 +146,10 @@ M.load_comments_on_buffer = function(bufnr)
 
   -- Handle CodeDiff buffers
   if M.is_in_codediff(buf_name) then
+    if state.selected_PR == nil then
+      return
+    end
+
     M.get_codediff_filename(buf_name, function(filename)
       if filename then
         M.load_comments_on_buffer_by_filename(bufnr, filename)
